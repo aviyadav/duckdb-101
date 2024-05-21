@@ -1,0 +1,4 @@
+duckdb==0.10.2
+pandas==2.2.2
+seaborn==0.13.2
+matplotlib==3.9.0
