@@ -11,4 +11,5 @@ dependencies = [
     "polars>=1.36.1",
     "seaborn>=0.13.2",
     "pyarrow>=10.0.1",
+    "faker>=39.0.0",
 ]
