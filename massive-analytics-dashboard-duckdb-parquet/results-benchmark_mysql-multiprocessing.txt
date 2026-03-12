@@ -1,0 +1,301 @@
+uv run .\benchmark.py
+
+============================================================
+  Benchmark: MySQL vs Parquet + DuckDB
+  10,000,000 rows | 100 clients | 10 channels
+  Workers: 24
+============================================================
+
+=== Cleanup ===
+
+Dropped MySQL database `benchmark_poc_db`.
+Removed C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data
+
+
+=== Step 1: Generating data (parallel, streaming to disk) ===
+
+  Workers:      24
+  Clients:      100
+  Days:         366
+  Ads/channel:  28
+  Est. rows:    ~10,248,000
+
+  Client  18: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_018.ndjson
+  Client   5: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_005.ndjson
+  Client  19: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_019.ndjson
+  Client  15: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_015.ndjson
+  Client  21: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_021.ndjson
+  Client   3: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_003.ndjson
+  Client   6: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_006.ndjson
+  Client   8: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_008.ndjson
+  Client  14: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_014.ndjson
+  Client   1: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_001.ndjson
+  Client  11: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_011.ndjson
+  Client   4: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_004.ndjson
+  Client  10: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_010.ndjson
+  Client  13: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_013.ndjson
+  Client   2: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_002.ndjson
+  Client  20: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_020.ndjson
+  Client   9: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_009.ndjson
+  Client  22: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_022.ndjson
+  Client   7: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_007.ndjson
+  Client  12: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_012.ndjson
+  Client  17: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_017.ndjson
+  Client  16: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_016.ndjson
+  Client  24: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_024.ndjson
+  Client  23: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_023.ndjson
+  Client  35: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_035.ndjson
+  Client  26: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_026.ndjson
+  Client  29: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_029.ndjson
+  Client  38: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_038.ndjson
+  Client  28: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_028.ndjson
+  Client  25: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_025.ndjson
+  Client  27: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_027.ndjson
+  Client  37: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_037.ndjson
+  Client  30: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_030.ndjson
+  Client  34: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_034.ndjson
+  Client  33: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_033.ndjson
+  Client  42: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_042.ndjson
+  Client  41: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_041.ndjson
+  Client  32: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_032.ndjson
+  Client  36: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_036.ndjson
+  Client  40: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_040.ndjson
+  Client  47: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_047.ndjson
+  Client  44: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_044.ndjson
+  Client  43: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_043.ndjson
+  Client  31: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_031.ndjson
+  Client  39: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_039.ndjson
+  Client  46: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_046.ndjson
+  Client  45: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_045.ndjson
+  Client  48: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_048.ndjson
+  Client  50: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_050.ndjson
+  Client  49: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_049.ndjson
+  Client  55: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_055.ndjson
+  Client  61: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_061.ndjson
+  Client  52: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_052.ndjson
+  Client  51: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_051.ndjson
+  Client  58: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_058.ndjson
+  Client  56: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_056.ndjson
+  Client  54: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_054.ndjson
+  Client  63: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_063.ndjson
+  Client  65: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_065.ndjson
+  Client  57: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_057.ndjson
+  Client  59: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_059.ndjson
+  Client  64: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_064.ndjson
+  Client  60: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_060.ndjson
+  Client  62: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_062.ndjson
+  Client  68: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_068.ndjson
+  Client  67: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_067.ndjson
+  Client  69: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_069.ndjson
+  Client  66: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_066.ndjson
+  Client  53: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_053.ndjson
+  Client  71: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_071.ndjson
+  Client  70: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_070.ndjson
+  Client  72: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_072.ndjson
+  Client  73: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_073.ndjson
+  Client  74: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_074.ndjson
+  Client  75: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_075.ndjson
+  Client  84: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_084.ndjson
+  Client  76: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_076.ndjson
+  Client  83: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_083.ndjson
+  Client  79: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_079.ndjson
+  Client  78: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_078.ndjson
+  Client  81: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_081.ndjson
+  Client  77: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_077.ndjson
+  Client  82: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_082.ndjson
+  Client  80: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_080.ndjson
+  Client  88: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_088.ndjson
+  Client  93: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_093.ndjson
+  Client  90: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_090.ndjson
+  Client  87: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_087.ndjson
+  Client  86: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_086.ndjson
+  Client  94: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_094.ndjson
+  Client  89: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_089.ndjson
+  Client  85: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_085.ndjson
+  Client  91: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_091.ndjson
+  Client  92: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_092.ndjson
+  Client  95: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_095.ndjson
+  Client  96: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_096.ndjson
+  Client  97: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_097.ndjson
+  Client  99: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_099.ndjson
+  Client 100: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_100.ndjson
+  Client  98: 102,480 rows -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson\client_098.ndjson
+
+Generated 10,248,000 rows in 8,657 ms
+  Clients:       100 (Apex Retail Corp, Bolt Technology Co, Crest Food & Beverage Inc, ...)
+  Channels:      10 (Facebook, Google, TikTok, LinkedIn, Snapchat, Pinterest, YouTube, X (Twitter), Reddit, Amazon Ads)
+  Date range:    2024-01-01 to 2024-12-31 (366 days)
+  Ads/partition: ~28
+  Batch files:   100 NDJSON files in C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson
+
+
+=== Step 2: Loading into MySQL (parallel) ===
+
+  Workers:     24
+  Batch size:  50,000
+  Files:       100
+
+  Inserted batch, total: 102,480 rows
+  Inserted batch, total: 204,960 rows
+  Inserted batch, total: 307,440 rows
+  Inserted batch, total: 409,920 rows
+  Inserted batch, total: 512,400 rows
+  Inserted batch, total: 614,880 rows
+  Inserted batch, total: 717,360 rows
+  Inserted batch, total: 819,840 rows
+  Inserted batch, total: 922,320 rows
+  Inserted batch, total: 1,024,800 rows
+  Inserted batch, total: 1,127,280 rows
+  Inserted batch, total: 1,229,760 rows
+  Inserted batch, total: 1,332,240 rows
+  Inserted batch, total: 1,434,720 rows
+  Inserted batch, total: 1,537,200 rows
+  Inserted batch, total: 1,639,680 rows
+  Inserted batch, total: 1,742,160 rows
+  Inserted batch, total: 1,844,640 rows
+  Inserted batch, total: 1,947,120 rows
+  Inserted batch, total: 2,049,600 rows
+  Inserted batch, total: 2,152,080 rows
+  Inserted batch, total: 2,254,560 rows
+  Inserted batch, total: 2,357,040 rows
+  Inserted batch, total: 2,459,520 rows
+  Inserted batch, total: 2,562,000 rows
+  Inserted batch, total: 2,664,480 rows
+  Inserted batch, total: 2,766,960 rows
+  Inserted batch, total: 2,869,440 rows
+  Inserted batch, total: 2,971,920 rows
+  Inserted batch, total: 3,074,400 rows
+  Inserted batch, total: 3,176,880 rows
+  Inserted batch, total: 3,279,360 rows
+  Inserted batch, total: 3,381,840 rows
+  Inserted batch, total: 3,484,320 rows
+  Inserted batch, total: 3,586,800 rows
+  Inserted batch, total: 3,689,280 rows
+  Inserted batch, total: 3,791,760 rows
+  Inserted batch, total: 3,894,240 rows
+  Inserted batch, total: 3,996,720 rows
+  Inserted batch, total: 4,099,200 rows
+  Inserted batch, total: 4,201,680 rows
+  Inserted batch, total: 4,304,160 rows
+  Inserted batch, total: 4,406,640 rows
+  Inserted batch, total: 4,509,120 rows
+  Inserted batch, total: 4,611,600 rows
+  Inserted batch, total: 4,714,080 rows
+  Inserted batch, total: 4,816,560 rows
+  Inserted batch, total: 4,919,040 rows
+  Inserted batch, total: 5,021,520 rows
+  Inserted batch, total: 5,124,000 rows
+  Inserted batch, total: 5,226,480 rows
+  Inserted batch, total: 5,328,960 rows
+  Inserted batch, total: 5,431,440 rows
+  Inserted batch, total: 5,533,920 rows
+  Inserted batch, total: 5,636,400 rows
+  Inserted batch, total: 5,738,880 rows
+  Inserted batch, total: 5,841,360 rows
+  Inserted batch, total: 5,943,840 rows
+  Inserted batch, total: 6,046,320 rows
+  Inserted batch, total: 6,148,800 rows
+  Inserted batch, total: 6,251,280 rows
+  Inserted batch, total: 6,353,760 rows
+  Inserted batch, total: 6,456,240 rows
+  Inserted batch, total: 6,558,720 rows
+  Inserted batch, total: 6,661,200 rows
+  Inserted batch, total: 6,763,680 rows
+  Inserted batch, total: 6,866,160 rows
+  Inserted batch, total: 6,968,640 rows
+  Inserted batch, total: 7,071,120 rows
+  Inserted batch, total: 7,173,600 rows
+  Inserted batch, total: 7,276,080 rows
+  Inserted batch, total: 7,378,560 rows
+  Inserted batch, total: 7,481,040 rows
+  Inserted batch, total: 7,583,520 rows
+  Inserted batch, total: 7,686,000 rows
+  Inserted batch, total: 7,788,480 rows
+  Inserted batch, total: 7,890,960 rows
+  Inserted batch, total: 7,993,440 rows
+  Inserted batch, total: 8,095,920 rows
+  Inserted batch, total: 8,198,400 rows
+  Inserted batch, total: 8,300,880 rows
+  Inserted batch, total: 8,403,360 rows
+  Inserted batch, total: 8,505,840 rows
+  Inserted batch, total: 8,608,320 rows
+  Inserted batch, total: 8,710,800 rows
+  Inserted batch, total: 8,813,280 rows
+  Inserted batch, total: 8,915,760 rows
+  Inserted batch, total: 9,018,240 rows
+  Inserted batch, total: 9,120,720 rows
+  Inserted batch, total: 9,223,200 rows
+  Inserted batch, total: 9,325,680 rows
+  Inserted batch, total: 9,428,160 rows
+  Inserted batch, total: 9,530,640 rows
+  Inserted batch, total: 9,633,120 rows
+  Inserted batch, total: 9,735,600 rows
+  Inserted batch, total: 9,838,080 rows
+  Inserted batch, total: 9,940,560 rows
+  Inserted batch, total: 10,043,040 rows
+  Inserted batch, total: 10,145,520 rows
+  Inserted batch, total: 10,248,000 rows
+
+MySQL load: 191,214 ms (10,248,000 rows)
+
+
+=== Step 3: Writing Parquet (Hive partitioning) ===
+
+Parquet write: 7,000 ms (10,248,000 rows)
+
+Cleaned up batch files: C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data\batch_ndjson
+
+
+=== Step 4 & 5: Running benchmark queries ===
+
+  Running: [A1] Total row count ... MySQL 2,572.1ms | DuckDB 425.4ms | 6.0x
+  Running: [A2] Global SUM aggregates ... MySQL 14,264.4ms | DuckDB 604.0ms | 23.6x
+  Running: [A3] Per-channel breakdown (client 1) ... MySQL 91.2ms | DuckDB 317.4ms | 0.3x
+  Running: [B1] Single client + channel + month filter ... MySQL 2.0ms | DuckDB 306.3ms | 0.0x
+  Running: [B2] Multi-client + channels + Q3 + spend threshold ... MySQL 88.8ms | DuckDB 343.6ms | 0.3x
+  Running: [B3] Campaign name search (LIKE) + date range ... MySQL 65.0ms | DuckDB 323.9ms | 0.2x
+  Running: [C1] Top 10 ads by total spend ... MySQL 133.4ms | DuckDB 307.1ms | 0.4x
+  Running: [C2] Top campaigns by CTR (computed metric sort) ... MySQL 165.9ms | DuckDB 182.7ms | 0.9x
+  Running: [C3] Worst cost-per-conversion (bottom performers) ... MySQL 164.2ms | DuckDB 174.9ms | 0.9x
+  Running: [D1] Daily spend trend (line chart — June 2024) ... MySQL 1.6ms | DuckDB 162.2ms | 0.0x
+  Running: [D2] Monthly rollup by channel (bar chart — full year) ... MySQL 128.9ms | DuckDB 188.8ms | 0.7x
+  Running: [D3] Channel spend distribution % (pie chart) ... MySQL 154.6ms | DuckDB 378.3ms | 0.4x
+  Running: [E1] Channel-only filter: monthly rollup across all clients ... MySQL 13,277.5ms | DuckDB 256.8ms | 51.7x
+  Running: [E2] Ad-level rollup + computed CTR & CPA (single client) ... MySQL 169.7ms | DuckDB 197.7ms | 0.9x
+  Running: [F1] SELECT * for specific client/date (Row fetch) ... MySQL 16.9ms | DuckDB 199.3ms | 0.1x
+
+Result files written:
+  MySQL results  -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_mysql.txt
+  DuckDB results -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_duckdb.txt
+  Comparison     -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_comparison.txt
+
+=== Step 6: Results ===
+
+Query                                                          MySQL (ms)    DuckDB (ms)    Speedup   Match
+-----------------------------------------------------------  ------------  -------------  ---------  -------
+--- Accuracy Verification ---
+[A1] Total row count                                               2572.1          425.4       6.0x    YES
+[A2] Global SUM aggregates                                        14264.4            604      23.6x    YES
+[A3] Per-channel breakdown (client 1)                                91.2          317.4       0.3x    YES
+--- Dashboard Filters ---
+[B1] Single client + channel + month filter                             2          306.3       0.0x    YES
+[B2] Multi-client + channels + Q3 + spend threshold                  88.8          343.6       0.3x    YES
+[B3] Campaign name search (LIKE) + date range                          65          323.9       0.2x    YES
+--- Sorting & Ranking ---
+[C1] Top 10 ads by total spend                                      133.4          307.1       0.4x    YES
+[C2] Top campaigns by CTR (computed metric sort)                    165.9          182.7       0.9x    YES
+[C3] Worst cost-per-conversion (bottom performers)                  164.2          174.9       0.9x    YES
+--- Time Series & Widgets ---
+[D1] Daily spend trend (line chart — June 2024)                       1.6          162.2       0.0x    YES
+[D2] Monthly rollup by channel (bar chart — full year)              128.9          188.8       0.7x    YES
+[D3] Channel spend distribution % (pie chart)                       154.6          378.3       0.4x    YES
+--- Partition & Columnar Proof ---
+[E1] Channel-only filter: monthly rollup across all clients       13277.5          256.8      51.7x    YES
+[E2] Ad-level rollup + computed CTR & CPA (single client)           169.7          197.7       0.9x    YES
+--- Row-Based Fetching ---
+[F1] SELECT * for specific client/date (Row fetch)                   16.9          199.3       0.1x    YES
+
+Total:  MySQL 31,296.0 ms | DuckDB 4,368.4 ms | Overall 7.2x | Accuracy 15/15 matched
+
+Parquet data size: 200.88 MB
+(MySQL data dir size depends on your MySQL datadir; compare manually if needed.)

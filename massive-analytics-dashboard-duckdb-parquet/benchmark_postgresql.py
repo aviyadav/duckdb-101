@@ -29,9 +29,14 @@ import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from dotenv import load_dotenv
+
 # ---------------------------------------------------------------------------
-# Configuration (adjust via environment variables)
+# Configuration (loaded from .env file, then environment variables)
 # ---------------------------------------------------------------------------
+
+# Load .env from the same directory as this script (silent if file is absent).
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 PG_HOST = os.environ.get("PG_HOST", "localhost")
 PG_PORT = int(os.environ.get("PG_PORT", "5432"))
@@ -766,7 +771,7 @@ def define_queries(parquet_ref):
                        ROUND(SUM(spend)::NUMERIC, 2) AS total_spend
                 FROM ad_insights
                 WHERE client_id = 2
-                  AND campaign_name LIKE '%Retargeting%'
+                  AND campaign_name LIKE '%%Retargeting%%'
                   AND date BETWEEN '2024-01-01' AND '2024-06-30'
                 GROUP BY campaign_id, campaign_name, channel_id
                 ORDER BY total_spend DESC

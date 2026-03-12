@@ -1,0 +1,84 @@
+uv run .\benchmark.py
+
+============================================================
+  Benchmark: MySQL vs Parquet + DuckDB
+  10,000,000 rows | 100 clients | 10 channels
+============================================================
+
+=== Cleanup ===
+
+Dropped MySQL database `benchmark_poc_db`.
+
+=== Step 1: Generating realistic ad performance data ===
+
+Generated 10,000,000 rows
+  Clients:       100 (Apex Retail Corp, Bolt Technology Co, Crest Food & Beverage Inc, ...)
+  Channels:      10 (Facebook, Google, TikTok, LinkedIn, Snapchat, Pinterest, YouTube, X (Twitter), Reddit, Amazon Ads)
+  Date range:    2024-01-01 to 2024-12-31 (366 days)
+  Ads/partition: ~28
+  Sample row:    {'id': 1, 'client_id': 1, 'channel_id': 1, 'ad_account_id': 'acc_001_01', 'campaign_id': 'camp_001_01_000', 'campaign_name': 'Brand Awareness - Retail - Facebook', 'ad_id': 'ad_001_01_000', 'ad_name': 'Video 30s - Brand Awareness #1', 'impressions': 47095, 'clicks': 323, 'spend': 215.14, 'conversions': 5, 'date': '2024-01-01', 'k': '00101'}
+
+
+=== Step 2: Loading into MySQL ===
+
+MySQL load: 390,596 ms (10,000,000 rows)
+
+
+=== Step 3: Writing Parquet (Hive partitioning) ===
+
+Parquet write: 14,798 ms (10,000,000 rows)
+
+
+=== Step 4 & 5: Running benchmark queries ===
+
+  Running: [A1] Total row count ... MySQL 3,069.1ms | DuckDB 508.6ms | 6.0x
+  Running: [A2] Global SUM aggregates ... MySQL 13,337.2ms | DuckDB 582.3ms | 22.9x
+  Running: [A3] Per-channel breakdown (client 1) ... MySQL 97.6ms | DuckDB 294.0ms | 0.3x
+  Running: [B1] Single client + channel + month filter ... MySQL 2.4ms | DuckDB 355.8ms | 0.0x
+  Running: [B2] Multi-client + channels + Q3 + spend threshold ... MySQL 75.3ms | DuckDB 345.6ms | 0.2x
+  Running: [B3] Campaign name search (LIKE) + date range ... MySQL 77.4ms | DuckDB 357.8ms | 0.2x
+  Running: [C1] Top 10 ads by total spend ... MySQL 144.9ms | DuckDB 366.6ms | 0.4x
+  Running: [C2] Top campaigns by CTR (computed metric sort) ... MySQL 164.0ms | DuckDB 325.3ms | 0.5x
+  Running: [C3] Worst cost-per-conversion (bottom performers) ... MySQL 185.6ms | DuckDB 304.1ms | 0.6x
+  Running: [D1] Daily spend trend (line chart — June 2024) ... MySQL 1.9ms | DuckDB 281.0ms | 0.0x
+  Running: [D2] Monthly rollup by channel (bar chart — full year) ... MySQL 142.6ms | DuckDB 318.3ms | 0.4x
+  Running: [D3] Channel spend distribution % (pie chart) ... MySQL 178.5ms | DuckDB 618.1ms | 0.3x
+  Running: [E1] Channel-only filter: monthly rollup across all clients ... MySQL 15,149.9ms | DuckDB 449.3ms | 33.7x
+  Running: [E2] Ad-level rollup + computed CTR & CPA (single client) ... MySQL 182.5ms | DuckDB 315.9ms | 0.6x
+  Running: [F1] SELECT * for specific client/date (Row fetch) ... MySQL 174.0ms | DuckDB 325.9ms | 0.5x
+
+Result files written:
+  MySQL results  -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_mysql.txt
+  DuckDB results -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_duckdb.txt
+  Comparison     -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_comparison.txt
+
+=== Step 6: Results ===
+
+Query                                                          MySQL (ms)    DuckDB (ms)    Speedup   Match
+-----------------------------------------------------------  ------------  -------------  ---------  -------
+--- Accuracy Verification ---
+[A1] Total row count                                               3069.1          508.6       6.0x    YES
+[A2] Global SUM aggregates                                        13337.2          582.3      22.9x    YES
+[A3] Per-channel breakdown (client 1)                                97.6            294       0.3x    YES
+--- Dashboard Filters ---
+[B1] Single client + channel + month filter                           2.4          355.8       0.0x    YES
+[B2] Multi-client + channels + Q3 + spend threshold                  75.3          345.6       0.2x    YES
+[B3] Campaign name search (LIKE) + date range                        77.4          357.8       0.2x    YES
+--- Sorting & Ranking ---
+[C1] Top 10 ads by total spend                                      144.9          366.6       0.4x    YES
+[C2] Top campaigns by CTR (computed metric sort)                      164          325.3       0.5x    YES
+[C3] Worst cost-per-conversion (bottom performers)                  185.6          304.1       0.6x    YES
+--- Time Series & Widgets ---
+[D1] Daily spend trend (line chart — June 2024)                       1.9            281       0.0x    YES
+[D2] Monthly rollup by channel (bar chart — full year)              142.6          318.3       0.4x    YES
+[D3] Channel spend distribution % (pie chart)                       178.5          618.1       0.3x    YES
+--- Partition & Columnar Proof ---
+[E1] Channel-only filter: monthly rollup across all clients       15149.9          449.3      33.7x    YES
+[E2] Ad-level rollup + computed CTR & CPA (single client)           182.5          315.9       0.6x    YES
+--- Row-Based Fetching ---
+[F1] SELECT * for specific client/date (Row fetch)                    174          325.9       0.5x    YES
+
+Total:  MySQL 32,982.9 ms | DuckDB 5,748.5 ms | Overall 5.7x | Accuracy 15/15 matched
+
+Parquet data size: 196.03 MB
+(MySQL data dir size depends on your MySQL datadir; compare manually if needed.)

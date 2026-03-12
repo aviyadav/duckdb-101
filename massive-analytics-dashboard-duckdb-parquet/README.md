@@ -10,10 +10,11 @@ Each benchmark generates 10 million rows of realistic ad-performance data across
 
 | Script | Row store | Columnar | Output prefix |
 |---|---|---|---|
+| `benchmark.py` | MySQL (local server, **multiprocessing**) | DuckDB + Parquet | `results_mysql` |
 | `benchmark_sqlite.py` | SQLite (embedded, file-based) | DuckDB + Parquet | `results_sqlite` |
-| `benchmark_sqlite_postgresql.py` | PostgreSQL (local server) | DuckDB + Parquet | `results_postgresql` |
+| `benchmark_postgresql.py` | PostgreSQL (local server) | DuckDB + Parquet | `results_postgresql` |
 
-Both scripts are structurally identical — same generated data, same 15 queries, same output format — so results are directly comparable across all three engines.
+All scripts are structurally identical — same generated data, same 15 queries, same output format — so results are directly comparable across all engines. The MySQL benchmark (`benchmark.py`) uses **multiprocessing** for parallel data generation and loading.
 
 ---
 
@@ -32,10 +33,12 @@ Both scripts are structurally identical — same generated data, same 15 queries
 
 ## How it works
 
+### SQLite & PostgreSQL benchmarks
+
 ```
-benchmark_sqlite.py  /  benchmark_sqlite_postgresql.py
+benchmark_sqlite.py  /  benchmark_postgresql.py
 │
-├── Step 1 — Generate data
+├── Step 1 — Generate data (single-threaded, in-memory)
 │     100 clients × 10 channels × 366 days × ~28 ads/partition
 │     Channel-specific cost profiles + seasonal spend multipliers
 │     Fixed random seed — identical rows every run
@@ -59,6 +62,67 @@ benchmark_sqlite.py  /  benchmark_sqlite_postgresql.py
       results_comparison.txt   side-by-side with PASS/FAIL accuracy check
 ```
 
+### MySQL benchmark (multiprocessing architecture)
+
+The MySQL benchmark (`benchmark.py`) uses a **parallel, streaming architecture** that avoids loading all data into memory:
+
+```
+benchmark.py  ← MySQL vs DuckDB + Parquet (multiprocessing)
+│
+├── Step 1 — Generate data (parallel, streaming to disk)
+│     ┌─────────────────────────────────────────────────────────────┐
+│     │ Multiprocessing Pool (N workers, N = min(cpu_count, 100))  │
+│     │                                                             │
+│     │  Worker 1    Worker 2    Worker 3    ...    Worker N       │
+│     │  client_1    client_2    client_3          client_N        │
+│     │     │           │           │                 │            │
+│     │     ▼           ▼           ▼                 ▼            │
+│     │  .ndjson     .ndjson     .ndjson    ...    .ndjson         │
+│     └─────────────────────────────────────────────────────────────┘
+│                              │
+│                              ▼
+│                  data/batch_ndjson/*.ndjson (100 files)
+│
+├── Step 2 — Load into MySQL (parallel batch inserts)
+│     ┌─────────────────────────────────────────────────────────────┐
+│     │ Main process: create database + table                       │
+│     └─────────────────────────────────────────────────────────────┘
+│                              │
+│                              ▼
+│     ┌─────────────────────────────────────────────────────────────┐
+│     │ Multiprocessing Pool (N workers)                            │
+│     │                                                             │
+│     │  Worker 1    Worker 2    Worker 3    ...    Worker N       │
+│     │  read NDJSON read NDJSON read NDJSON      read NDJSON       │
+│     │  insert      insert      insert           insert            │
+│     │  50K batch   50K batch   50K batch        50K batch         │
+│     └─────────────────────────────────────────────────────────────┘
+│                              │
+│                              ▼
+│                  MySQL: ad_insights table (10M rows)
+│
+├── Step 3 — Write Parquet (DuckDB reads NDJSON glob)
+│     DuckDB: read_ndjson_auto('data/batch_ndjson/*.ndjson')
+│              → COPY TO Parquet (PARTITION_BY k)
+│
+├── Step 4 — Cleanup batch files
+│     Remove data/batch_ndjson/ directory
+│
+├── Step 5 — Run MySQL queries      (median of 3 runs each)
+├── Step 6 — Run DuckDB queries     (median of 3 runs each)
+│
+└── Step 7 — Write results
+      results_mysql.txt       raw MySQL output
+      results_duckdb.txt      raw DuckDB output
+      results_comparison.txt  side-by-side with PASS/FAIL accuracy check
+```
+
+**Key benefits of multiprocessing:**
+- **Memory efficient**: No 1-4 GB in-memory row accumulation; workers stream directly to NDJSON files
+- **Faster generation**: Parallel workers utilize all CPU cores
+- **Faster MySQL loading**: Parallel inserts with multiple database connections
+- **Scalable**: Works with 100M+ rows without memory pressure
+
 ### Partition key `k`
 
 Every row carries a zero-padded composite key that encodes the client and channel:
@@ -76,14 +140,17 @@ DuckDB queries filter on `k IN (...)` instead of bare `client_id` / `channel_id`
 
 ## Requirements
 
-| Dependency | Purpose | SQLite script | PostgreSQL script |
-|---|---|:---:|:---:|
-| Python ≥ 3.13 | Runtime | ✓ | ✓ |
-| `duckdb >= 1.5.0` | Columnar query engine + Parquet writer | ✓ | ✓ |
-| `tabulate >= 0.10.0` | Pretty-print result tables | ✓ | ✓ |
-| `psycopg[binary] >= 3.2.0` | PostgreSQL driver (bundles libpq) | — | ✓ |
-| SQLite | Embedded in Python stdlib | ✓ | — |
-| PostgreSQL server | Local instance (any recent version) | — | ✓ |
+| Dependency | Purpose | MySQL | SQLite | PostgreSQL |
+|---|---|:---:|:---:|:---:|
+| Python ≥ 3.13 | Runtime | ✓ | ✓ | ✓ |
+| `duckdb >= 1.5.0` | Columnar query engine + Parquet writer | ✓ | ✓ | ✓ |
+| `tabulate >= 0.10.0` | Pretty-print result tables | ✓ | ✓ | ✓ |
+| `python-dotenv >= 1.0.0` | Load configuration from `.env` file | ✓ | — | — |
+| `mysql-connector-python >= 9.6.0` | MySQL driver | ✓ | — | — |
+| `psycopg[binary] >= 3.2.0` | PostgreSQL driver (bundles libpq) | — | — | ✓ |
+| SQLite | Embedded in Python stdlib | — | ✓ | — |
+| MySQL server | Local instance (any recent version) | ✓ | — | — |
+| PostgreSQL server | Local instance (any recent version) | — | — | ✓ |
 
 Install Python dependencies with **uv** (recommended):
 
@@ -94,8 +161,76 @@ uv sync
 Or with pip:
 
 ```sh
-pip install duckdb tabulate "psycopg[binary]"
+pip install duckdb tabulate python-dotenv mysql-connector-python "psycopg[binary]"
 ```
+
+---
+
+## Configuration via `.env` file
+
+All benchmarks support environment variables for configuration. The MySQL benchmark (`benchmark.py`) additionally reads from a `.env` file in the project root:
+
+```sh
+# Copy the example file and edit with your credentials
+cp .env.example .env
+```
+
+**`.env` file format:**
+
+```env
+# MySQL Configuration (used by benchmark.py)
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+
+# PostgreSQL Configuration (used by benchmark_postgresql.py)
+PG_HOST=localhost
+PG_PORT=5432
+PG_USER=postgres
+PG_PASSWORD=your_password
+PG_DBNAME=benchmark_poc_db
+
+# Benchmark settings (shared by all scripts)
+NUM_ROWS=10_000_000
+SKIP_CLEANUP=0
+```
+
+> **Security note:** The `.env` file is excluded from git via `.gitignore`. Never commit real credentials.
+
+---
+
+## Running the MySQL benchmark
+
+### Prerequisites
+
+1. A running local MySQL instance.
+2. The configured user must have privileges to create/drop databases.
+
+```sh
+# Full run — 10 million rows with multiprocessing
+uv run python benchmark.py
+
+# Quick smoke-test — 100 K rows
+NUM_ROWS=100000 uv run python benchmark.py
+
+# Keep the table and Parquet files after the run
+SKIP_CLEANUP=1 uv run python benchmark.py
+
+# Override .env settings via command line
+MYSQL_HOST=myhost MYSQL_PASSWORD=secret uv run python benchmark.py
+```
+
+### Environment variables — MySQL
+
+| Variable | Default | Description |
+|---|---|---|
+| `MYSQL_HOST` | `localhost` | MySQL host |
+| `MYSQL_PORT` | `3306` | MySQL port |
+| `MYSQL_USER` | `root` | Database user |
+| `MYSQL_PASSWORD` | (empty) | Database password |
+| `NUM_ROWS` | `10_000_000` | Total rows to generate |
+| `SKIP_CLEANUP` | `0` | Set to `1` to retain table and `data/` after the run |
 
 ---
 
@@ -271,20 +406,28 @@ PostgreSQL's `ROUND` requires an explicit `NUMERIC` cast when operating on a `DO
 
 ```
 .
+├── benchmark.py                     ← MySQL vs DuckDB + Parquet (multiprocessing)
 ├── benchmark_sqlite.py              ← SQLite vs DuckDB + Parquet
-├── benchmark_sqlite_postgresql.py   ← PostgreSQL vs DuckDB + Parquet
-├── benchmark.py                     ← original MySQL vs DuckDB + Parquet
-├── pyproject.toml                   ← dependencies (duckdb, psycopg, tabulate)
+├── benchmark_postgresql.py          ← PostgreSQL vs DuckDB + Parquet
+├── pyproject.toml                   ← dependencies
 ├── uv.lock
+├── .env                             ← database credentials (git-ignored)
+├── .env.example                     ← template for .env
+├── .gitignore                       ← excludes .env and generated files
 │
+├── results_mysql.txt                ← generated by benchmark.py
 ├── results_sqlite.txt               ← generated by benchmark_sqlite.py
-├── results_postgresql.txt           ← generated by benchmark_sqlite_postgresql.py
-├── results_duckdb.txt               ← generated by either script
-├── results_comparison.txt           ← generated by either script
+├── results_postgresql.txt           ← generated by benchmark_postgresql.py
+├── results_duckdb.txt               ← generated by any script
+├── results_comparison.txt           ← generated by any script
 │
 └── data/                            ← generated on run, removed by cleanup
+    ├── batch_ndjson/                ← temp NDJSON files (benchmark.py only)
+    │   ├── client_001.ndjson
+    │   ├── client_002.ndjson
+    │   └── ... (100 files)
     ├── benchmark_poc_db.db          ← SQLite database (benchmark_sqlite.py only)
-    └── insights/                    ← Hive-partitioned Parquet tree (both scripts)
+    └── insights/                    ← Hive-partitioned Parquet tree
         ├── k=00101/
         │   └── *.parquet
         ├── k=00102/

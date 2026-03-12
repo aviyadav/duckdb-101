@@ -1,0 +1,86 @@
+benchmark_postgresql.py
+
+============================================================
+  Benchmark: PostgreSQL vs Parquet + DuckDB
+  10,000,000 rows | 100 clients | 10 channels
+============================================================
+
+=== Cleanup ===
+
+Dropped PostgreSQL table ad_insights.
+Removed C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data
+
+
+=== Step 1: Generating realistic ad performance data ===
+
+Generated 10,000,000 rows
+  Clients:       100 (Apex Retail Corp, Bolt Technology Co, Crest Food & Beverage Inc, ...)
+  Channels:      10 (Facebook, Google, TikTok, LinkedIn, Snapchat, Pinterest, YouTube, X (Twitter), Reddit, Amazon Ads)
+  Date range:    2024-01-01 to 2024-12-31 (366 days)
+  Ads/partition: ~28
+  Sample row:    {'id': 1, 'client_id': 1, 'channel_id': 1, 'ad_account_id': 'acc_001_01', 'campaign_id': 'camp_001_01_000', 'campaign_name': 'Brand Awareness - Retail - Facebook', 'ad_id': 'ad_001_01_000', 'ad_name': 'Video 30s - Brand Awareness #1', 'impressions': 47095, 'clicks': 323, 'spend': 215.14, 'conversions': 5, 'date': '2024-01-01', 'k': '00101'}
+
+
+=== Step 2: Loading into PostgreSQL ===
+
+PostgreSQL load: 324,931 ms (10,000,000 rows)
+
+
+=== Step 3: Writing Parquet (Hive partitioning) ===
+
+Parquet write: 15,788 ms (10,000,000 rows)
+
+
+=== Step 4 & 5: Running benchmark queries ===
+
+  Running: [A1] Total row count ... PostgreSQL 112.0ms | DuckDB 338.3ms | 0.3x
+  Running: [A2] Global SUM aggregates ... PostgreSQL 4,067.9ms | DuckDB 377.9ms | 10.8x
+  Running: [A3] Per-channel breakdown (client 1) ... PostgreSQL 23.9ms | DuckDB 175.8ms | 0.1x
+  Running: [B1] Single client + channel + month filter ... PostgreSQL 2.3ms | DuckDB 160.8ms | 0.0x
+  Running: [B2] Multi-client + channels + Q3 + spend threshold ... PostgreSQL 29.7ms | DuckDB 187.0ms | 0.2x
+  Running: [B3] Campaign name search (LIKE) + date range ... PostgreSQL 11.4ms | DuckDB 174.7ms | 0.1x
+  Running: [C1] Top 10 ads by total spend ... PostgreSQL 71.5ms | DuckDB 179.0ms | 0.4x
+  Running: [C2] Top campaigns by CTR (computed metric sort) ... PostgreSQL 86.2ms | DuckDB 179.2ms | 0.5x
+  Running: [C3] Worst cost-per-conversion (bottom performers) ... PostgreSQL 74.1ms | DuckDB 172.8ms | 0.4x
+  Running: [D1] Daily spend trend (line chart — June 2024) ... PostgreSQL 0.8ms | DuckDB 164.8ms | 0.0x
+  Running: [D2] Monthly rollup by channel (bar chart — full year) ... PostgreSQL 31.9ms | DuckDB 215.5ms | 0.1x
+  Running: [D3] Channel spend distribution % (pie chart) ... PostgreSQL 53.1ms | DuckDB 333.8ms | 0.2x
+  Running: [E1] Channel-only filter: monthly rollup across all clients ... PostgreSQL 4,147.2ms | DuckDB 256.4ms | 16.2x
+  Running: [E2] Ad-level rollup + computed CTR & CPA (single client) ... PostgreSQL 75.1ms | DuckDB 174.0ms | 0.4x
+  Running: [F1] SELECT * for specific client/date (Row fetch) ... PostgreSQL 12.3ms | DuckDB 239.3ms | 0.1x
+
+Result files written:
+  PostgreSQL results -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_postgresql.txt
+  DuckDB results     -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_duckdb.txt
+  Comparison         -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_comparison.txt
+
+=== Step 6: Results ===
+
+Query                                                          PG (ms)    DuckDB (ms)    Speedup   Match
+-----------------------------------------------------------  ---------  -------------  ---------  -------
+--- Accuracy Verification ---
+[A1] Total row count                                               112          338.3       0.3x    YES
+[A2] Global SUM aggregates                                      4067.9          377.9      10.8x    YES
+[A3] Per-channel breakdown (client 1)                             23.9          175.8       0.1x    YES
+--- Dashboard Filters ---
+[B1] Single client + channel + month filter                        2.3          160.8       0.0x    YES
+[B2] Multi-client + channels + Q3 + spend threshold               29.7            187       0.2x    YES
+[B3] Campaign name search (LIKE) + date range                     11.4          174.7       0.1x    YES
+--- Sorting & Ranking ---
+[C1] Top 10 ads by total spend                                    71.5            179       0.4x    YES
+[C2] Top campaigns by CTR (computed metric sort)                  86.2          179.2       0.5x    YES
+[C3] Worst cost-per-conversion (bottom performers)                74.1          172.8       0.4x    YES
+--- Time Series & Widgets ---
+[D1] Daily spend trend (line chart — June 2024)                    0.8          164.8       0.0x    YES
+[D2] Monthly rollup by channel (bar chart — full year)            31.9          215.5       0.1x    YES
+[D3] Channel spend distribution % (pie chart)                     53.1          333.8       0.2x    YES
+--- Partition & Columnar Proof ---
+[E1] Channel-only filter: monthly rollup across all clients     4147.2          256.4      16.2x    YES
+[E2] Ad-level rollup + computed CTR & CPA (single client)         75.1            174       0.4x    YES
+--- Row-Based Fetching ---
+[F1] SELECT * for specific client/date (Row fetch)                12.3          239.3       0.1x    YES
+
+Total:  PostgreSQL 8,799.3 ms | DuckDB 3,329.4 ms | Overall 2.6x | Accuracy 15/15 matched
+
+Parquet data size: 196.03 MB
+PostgreSQL table size (ad_insights): 2176 MB

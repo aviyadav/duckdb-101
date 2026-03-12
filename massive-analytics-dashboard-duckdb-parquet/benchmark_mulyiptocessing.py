@@ -15,6 +15,9 @@ Run from repo root:
 Set SKIP_CLEANUP=1 to keep MySQL database and Parquet files after run.
 """
 
+import json
+import math
+import multiprocessing as mp
 import os
 import random
 import shutil
@@ -23,9 +26,13 @@ import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from dotenv import load_dotenv
+
 # ---------------------------------------------------------------------------
-# Configuration (adjust via environment variables)
+# Configuration (loaded from .env, then environment variables)
 # ---------------------------------------------------------------------------
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
 MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
 MYSQL_USER = os.environ.get("MYSQL_USER", "root")
@@ -197,6 +204,11 @@ DB_NAME = "benchmark_poc_db"
 NUM_RUNS = 3
 SKIP_CLEANUP = os.environ.get("SKIP_CLEANUP", "0") == "1"
 
+# Multiprocessing configuration
+NUM_WORKERS = min(os.cpu_count() or 4, NUM_CLIENTS)
+BATCH_DIR = os.path.join(DATA_DIR, "batch_ndjson")
+MYSQL_INSERT_BATCH_SIZE = 50_000
+
 MYSQL_RESULTS_FILE = os.path.join(SCRIPT_DIR, "results_mysql.txt")
 DUCKDB_RESULTS_FILE = os.path.join(SCRIPT_DIR, "results_duckdb.txt")
 COMPARISON_FILE = os.path.join(SCRIPT_DIR, "results_comparison.txt")
@@ -275,28 +287,27 @@ def results_match(rows_a, rows_b, float_tolerance=0.02):
 
 
 # ---------------------------------------------------------------------------
-# Step 1: Generate realistic ad performance data
+# Multiprocessing Worker Functions (module-level for pickle compatibility)
 # ---------------------------------------------------------------------------
-def generate_data():
-    """Generate diverse, production-like ad performance rows.
-    Uses channel-specific metric profiles and seasonal multipliers to create
-    data that mirrors real-world ad platform behavior across 100 clients and
-    10 advertising channels.
+def _generate_client_batch(args):
+    """Worker: generate data for one client and write to NDJSON file.
+
+    Each worker handles one client_id, generating rows for all 10 channels.
+    Rows are written directly to a temp NDJSON file - no accumulation in memory.
+
+    Args:
+        args: Tuple of (client_id, ads_per_channel, days, batch_dir, start_row_id)
+
     Returns:
-        A list of dicts, each representing one day of ad performance for a
-        single ad creative.
+        Tuple of (client_id, ndjson_path, num_rows_generated)
     """
-    print("\n=== Step 1: Generating realistic ad performance data ===\n")
-    random.seed(RANDOM_SEED)
+    client_id, ads_per_channel, days, batch_dir, start_row_id = args
 
-    rows = []
-    row_id = 0
-    days = (DATE_END - DATE_START).days + 1
+    # Deterministic seeding per client for reproducibility
+    random.seed(RANDOM_SEED + client_id)
 
-    # Calculate ads per channel-client combo to reach NUM_ROWS
-    ads_per_channel = max(1, NUM_ROWS // (NUM_CLIENTS * NUM_CHANNELS * days))
-    if ads_per_channel * NUM_CLIENTS * NUM_CHANNELS * days < NUM_ROWS:
-        ads_per_channel += 1
+    client = CLIENTS[client_id]
+    ndjson_path = os.path.join(batch_dir, f"client_{client_id:03d}.ndjson")
 
     campaign_types = [
         "Brand Awareness",
@@ -317,8 +328,10 @@ def generate_data():
         "Playable",
     ]
 
-    for client_id in range(1, NUM_CLIENTS + 1):
-        client = CLIENTS[client_id]
+    row_id = start_row_id
+    rows_written = 0
+
+    with open(ndjson_path, "w", encoding="utf-8") as f:
         for channel_id in range(1, NUM_CHANNELS + 1):
             profile = CHANNEL_PROFILES[channel_id]
             channel_name = CHANNELS[channel_id]
@@ -330,83 +343,197 @@ def generate_data():
                 ad_name = f"{ad_format} - {camp_type} #{ad_idx + 1}"
 
                 for d in range(days):
-                    if len(rows) >= NUM_ROWS:
-                        break
                     row_id += 1
                     dt = DATE_START + timedelta(days=d)
                     seasonal = SEASONAL_MULTIPLIERS[dt.month]
 
-                    # Impressions: channel-specific range with seasonal factor
                     impressions = int(random.randint(*profile["imp_range"]) * seasonal)
-                    # CTR: varies by creative quality (0.5% – 8%)
                     ctr = random.uniform(0.005, 0.08)
                     clicks = max(0, int(impressions * ctr))
-
-                    # CPC: channel-specific cost, modulated by season
                     cpc = random.uniform(*profile["cpc_range"])
                     spend = round(clicks * cpc * seasonal, 2)
-
-                    # Conversions: based on channel's typical conversion rate
                     conversions = max(
-                        0,
-                        int(clicks * profile["conv_rate"] * random.uniform(0.5, 1.5)),
+                        0, int(clicks * profile["conv_rate"] * random.uniform(0.5, 1.5))
                     )
 
-                    rows.append(
-                        {
-                            "id": row_id,
-                            "client_id": client_id,
-                            "channel_id": channel_id,
-                            "ad_account_id": f"acc_{client_id:03d}_{channel_id:02d}",
-                            "campaign_id": (
-                                f"camp_{client_id:03d}_{channel_id:02d}_{ad_idx:03d}"
-                            ),
-                            "campaign_name": campaign_name,
-                            "ad_id": (
-                                f"ad_{client_id:03d}_{channel_id:02d}_{ad_idx:03d}"
-                            ),
-                            "ad_name": ad_name,
-                            "impressions": impressions,
-                            "clicks": clicks,
-                            "spend": spend,
-                            "conversions": conversions,
-                            "date": dt.strftime("%Y-%m-%d"),
-                            "k": make_k(client_id, channel_id),
-                        }
-                    )
+                    row = {
+                        "id": row_id,
+                        "client_id": client_id,
+                        "channel_id": channel_id,
+                        "ad_account_id": f"acc_{client_id:03d}_{channel_id:02d}",
+                        "campaign_id": f"camp_{client_id:03d}_{channel_id:02d}_{ad_idx:03d}",
+                        "campaign_name": campaign_name,
+                        "ad_id": f"ad_{client_id:03d}_{channel_id:02d}_{ad_idx:03d}",
+                        "ad_name": ad_name,
+                        "impressions": impressions,
+                        "clicks": clicks,
+                        "spend": spend,
+                        "conversions": conversions,
+                        "date": dt.strftime("%Y-%m-%d"),
+                        "k": make_k(client_id, channel_id),
+                    }
+                    f.write(json.dumps(row) + "\n")
+                    rows_written += 1
 
-                if len(rows) >= NUM_ROWS:
-                    break
-            if len(rows) >= NUM_ROWS:
-                break
-        if len(rows) >= NUM_ROWS:
-            break
+    return (client_id, ndjson_path, rows_written)
+
+
+def _load_mysql_batch(args):
+    """Worker: read one NDJSON file and batch-insert into MySQL.
+
+    Args:
+        args: Tuple of (ndjson_path, mysql_config)
+
+    Returns:
+        Number of rows inserted
+    """
+    ndjson_path, mysql_config = args
+    import mysql.connector
+
+    conn = mysql.connector.connect(**mysql_config, autocommit=False)
+    cursor = conn.cursor()
+
+    insert_sql = """
+        INSERT INTO ad_insights
+        (id, client_id, channel_id, ad_account_id, campaign_id, campaign_name,
+         ad_id, ad_name, impressions, clicks, spend, conversions, date)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+
+    batch = []
+    rows_inserted = 0
+
+    with open(ndjson_path, "r", encoding="utf-8") as f:
+        for line in f:
+            row = json.loads(line)
+            batch.append(
+                (
+                    row["id"],
+                    row["client_id"],
+                    row["channel_id"],
+                    row["ad_account_id"],
+                    row["campaign_id"],
+                    row["campaign_name"],
+                    row["ad_id"],
+                    row["ad_name"],
+                    row["impressions"],
+                    row["clicks"],
+                    row["spend"],
+                    row["conversions"],
+                    row["date"],
+                )
+            )
+
+            if len(batch) >= MYSQL_INSERT_BATCH_SIZE:
+                cursor.executemany(insert_sql, batch)
+                rows_inserted += len(batch)
+                batch = []
+
+    if batch:
+        cursor.executemany(insert_sql, batch)
+        rows_inserted += len(batch)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return rows_inserted
+
+
+# ---------------------------------------------------------------------------
+# Step 1: Generate realistic ad performance data (parallel, streaming to disk)
+# ---------------------------------------------------------------------------
+def generate_data():
+    """Generate data in parallel using multiprocessing, streaming to NDJSON files.
+
+    Instead of accumulating all rows in memory, each worker writes directly
+    to a temp NDJSON file. This enables generation of 10M+ rows without
+    memory pressure.
+
+    Returns:
+        Tuple of (ndjson_paths, total_rows, ads_per_channel)
+    """
+    print("\n=== Step 1: Generating data (parallel, streaming to disk) ===\n")
+
+    days = (DATE_END - DATE_START).days + 1
+
+    # Calculate ads per channel to reach NUM_ROWS
+    total_slots = NUM_CLIENTS * NUM_CHANNELS * days
+    ads_per_channel = math.ceil(NUM_ROWS / total_slots)
+    ads_per_channel = max(1, ads_per_channel)
+
+    # Rows per client for ID assignment
+    rows_per_client = NUM_CHANNELS * ads_per_channel * days
+
+    # Prepare batch directory
+    os.makedirs(BATCH_DIR, exist_ok=True)
+    # Clean up any existing batch files
+    for f in os.listdir(BATCH_DIR):
+        if f.endswith(".ndjson"):
+            os.remove(os.path.join(BATCH_DIR, f))
+
+    # Prepare work units: one per client
+    work_args = [
+        (client_id, ads_per_channel, days, BATCH_DIR, (client_id - 1) * rows_per_client)
+        for client_id in range(1, NUM_CLIENTS + 1)
+    ]
+
+    print(f"  Workers:      {NUM_WORKERS}")
+    print(f"  Clients:      {NUM_CLIENTS}")
+    print(f"  Days:         {days}")
+    print(f"  Ads/channel:  {ads_per_channel}")
+    print(f"  Est. rows:    ~{NUM_CLIENTS * rows_per_client:,}")
+    print()
+
+    t0 = time.perf_counter()
+    ndjson_paths = []
+    total_rows = 0
+
+    with mp.Pool(NUM_WORKERS) as pool:
+        for client_id, ndjson_path, rows_generated in pool.imap_unordered(
+            _generate_client_batch, work_args
+        ):
+            ndjson_paths.append(ndjson_path)
+            total_rows += rows_generated
+            print(f"  Client {client_id:3d}: {rows_generated:,} rows -> {ndjson_path}")
+
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+
+    # Sort paths for consistent ordering
+    ndjson_paths.sort()
 
     first_3 = [CLIENTS[i]["name"] for i in range(1, min(4, NUM_CLIENTS + 1))]
     client_preview = (
         ", ".join(first_3) + ", ..." if NUM_CLIENTS > 3 else ", ".join(first_3)
     )
 
-    print(f"Generated {len(rows):,} rows")
+    print(f"\nGenerated {total_rows:,} rows in {elapsed_ms:,.0f} ms")
     print(f"  Clients:       {NUM_CLIENTS} ({client_preview})")
     print(f"  Channels:      {NUM_CHANNELS} ({', '.join(CHANNELS.values())})")
     print(f"  Date range:    {DATE_START.date()} to {DATE_END.date()} ({days} days)")
     print(f"  Ads/partition: ~{ads_per_channel}")
-    print(f"  Sample row:    {rows[0]}\n")
-    return rows
+    print(f"  Batch files:   {len(ndjson_paths)} NDJSON files in {BATCH_DIR}\n")
+
+    return ndjson_paths, total_rows, ads_per_channel
 
 
 # ---------------------------------------------------------------------------
-# Step 2: Load into MySQL
+# Step 2: Load into MySQL (parallel batch inserts from NDJSON files)
 # ---------------------------------------------------------------------------
-def load_mysql(rows):
-    """Create the MySQL table and bulk-insert all rows.
+def load_mysql(ndjson_paths, total_rows):
+    """Create the MySQL table and bulk-insert all rows in parallel.
+
+    Main process creates the database and table, then spawns workers
+    to read NDJSON files and insert in parallel.
+
     Args:
-        rows: The generated data rows.
+        ndjson_paths: List of paths to NDJSON batch files.
+        total_rows: Total number of rows (for progress display).
     """
-    print("\n=== Step 2: Loading into MySQL ===\n")
+    print("\n=== Step 2: Loading into MySQL (parallel) ===\n")
     import mysql.connector
 
+    # Main process: create database and table
     conn = mysql.connector.connect(
         host=MYSQL_HOST,
         port=MYSQL_PORT,
@@ -440,53 +567,60 @@ def load_mysql(rows):
             INDEX idx_client_date (client_id, date)
         )
     """)
-
-    t0 = time.perf_counter()
-    batch_size = 10_000
-    for i in range(0, len(rows), batch_size):
-        batch = rows[i : i + batch_size]
-        cursor.executemany(
-            """
-            INSERT INTO ad_insights
-            (id, client_id, channel_id, ad_account_id, campaign_id, campaign_name,
-             ad_id, ad_name, impressions, clicks, spend, conversions, date)
-            VALUES (%(id)s, %(client_id)s, %(channel_id)s, %(ad_account_id)s,
-                    %(campaign_id)s, %(campaign_name)s, %(ad_id)s, %(ad_name)s,
-                    %(impressions)s, %(clicks)s, %(spend)s, %(conversions)s, %(date)s)
-            """,
-            batch,
-        )
     conn.commit()
-    elapsed_ms = (time.perf_counter() - t0) * 1000
-    print(f"MySQL load: {elapsed_ms:,.0f} ms ({len(rows):,} rows)\n")
     cursor.close()
     conn.close()
 
+    # Prepare MySQL config for workers
+    mysql_config = {
+        "host": MYSQL_HOST,
+        "port": MYSQL_PORT,
+        "user": MYSQL_USER,
+        "password": MYSQL_PASSWORD,
+        "database": DB_NAME,
+    }
+
+    # Prepare work units for parallel loading
+    work_args = [(path, mysql_config) for path in ndjson_paths]
+
+    print(f"  Workers:     {NUM_WORKERS}")
+    print(f"  Batch size:  {MYSQL_INSERT_BATCH_SIZE:,}")
+    print(f"  Files:       {len(ndjson_paths)}\n")
+
+    t0 = time.perf_counter()
+    rows_inserted = 0
+
+    with mp.Pool(NUM_WORKERS) as pool:
+        for inserted in pool.imap_unordered(_load_mysql_batch, work_args):
+            rows_inserted += inserted
+            print(f"  Inserted batch, total: {rows_inserted:,} rows")
+
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    print(f"\nMySQL load: {elapsed_ms:,.0f} ms ({rows_inserted:,} rows)\n")
+
 
 # ---------------------------------------------------------------------------
-# Step 3: Write to Parquet with Hive partitioning
+# Step 3: Write to Parquet with Hive partitioning (from NDJSON files)
 # ---------------------------------------------------------------------------
-def load_parquet(rows):
-    """Write rows to Hive-partitioned Parquet files via DuckDB.
-    Pipeline: Python dicts → JSON file → read_json_auto() → Parquet.
-    Partitions by the composite key ``k`` (client_id + channel_id, zero-padded).
-    Date column is cast to DATE for proper type handling in queries.
+def load_parquet(ndjson_paths, total_rows):
+    """Write NDJSON files to Hive-partitioned Parquet files via DuckDB.
+
+    DuckDB reads all NDJSON files via glob pattern and writes to Parquet
+    partitioned by the composite key ``k`` (client_id + channel_id, zero-padded).
+
     Args:
-        rows: The generated data rows.
+        ndjson_paths: List of paths to NDJSON batch files.
+        total_rows: Total number of rows (for progress display).
     """
     print("\n=== Step 3: Writing Parquet (Hive partitioning) ===\n")
-    import json as _json
-
     import duckdb
 
     os.makedirs(DATA_DIR, exist_ok=True)
     if os.path.exists(PARQUET_BASE):
         shutil.rmtree(PARQUET_BASE)
 
-    json_path = os.path.join(DATA_DIR, "temp_insights.json")
-    if rows:
-        with open(json_path, "w", encoding="utf-8") as f:
-            _json.dump(rows, f)
+    # Use glob pattern to read all NDJSON files at once
+    ndjson_glob = os.path.join(BATCH_DIR, "*.ndjson").replace("\\", "/")
 
     conn = duckdb.connect(":memory:")
     t0 = time.perf_counter()
@@ -506,15 +640,13 @@ def load_parquet(rows):
                    CAST(conversions AS INTEGER) AS conversions,
                    CAST(date AS DATE) AS date,
                    CAST(k AS VARCHAR) AS k
-            FROM read_json_auto('{json_path.replace(chr(92), "/")}')
+            FROM read_ndjson_auto('{ndjson_glob}')
         ) TO '{PARQUET_BASE.replace(chr(92), "/")}'
         (FORMAT PARQUET, PARTITION_BY (k), COMPRESSION 'snappy', OVERWRITE_OR_IGNORE 1)
     """)
     elapsed_ms = (time.perf_counter() - t0) * 1000
     conn.close()
-    if os.path.exists(json_path):
-        os.remove(json_path)
-    print(f"Parquet write: {elapsed_ms:,.0f} ms ({len(rows):,} rows)\n")
+    print(f"Parquet write: {elapsed_ms:,.0f} ms ({total_rows:,} rows)\n")
 
 
 # ---------------------------------------------------------------------------
@@ -1581,12 +1713,25 @@ def main():
     print("\n" + "=" * 60)
     print("  Benchmark: MySQL vs Parquet + DuckDB")
     print(f"  {NUM_ROWS:,} rows | {NUM_CLIENTS} clients | {NUM_CHANNELS} channels")
+    print(f"  Workers: {NUM_WORKERS}")
     print("=" * 60)
     cleanup()
-    rows = generate_data()
-    load_mysql(rows)
-    load_parquet(rows)
 
+    # Step 1: Generate data in parallel, streaming to NDJSON files
+    ndjson_paths, total_rows, ads_per_channel = generate_data()
+
+    # Step 2: Load into MySQL in parallel
+    load_mysql(ndjson_paths, total_rows)
+
+    # Step 3: Write to Parquet (DuckDB reads from NDJSON glob)
+    load_parquet(ndjson_paths, total_rows)
+
+    # Step 4: Cleanup batch files before benchmarks
+    if os.path.exists(BATCH_DIR):
+        shutil.rmtree(BATCH_DIR)
+        print(f"Cleaned up batch files: {BATCH_DIR}\n")
+
+    # Step 5: Run benchmarks
     bench_results = run_benchmarks()
 
     # Write all three result files

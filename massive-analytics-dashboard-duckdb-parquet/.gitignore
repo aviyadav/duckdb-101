@@ -1,0 +1,58 @@
+# Environment variables — never commit secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+wheels/
+*.egg-link
+pip-wheel-metadata/
+share/python-wheels/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# uv
+.uv/
+
+# Benchmark output files (generated at runtime)
+data/
+#results_mysql.txt
+#results_postgresql.txt
+#results_sqlite.txt
+#results_duckdb.txt
+#results_comparison.txt
+
+# DuckDB files
+*.duckdb
+*.duckdb.wal
+
+# Parquet files
+*.parquet
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Benchmark: SQLite vs Parquet + DuckDB for ad analytics dashboard queries.
+Benchmark: MySQL vs Parquet + DuckDB for ad analytics dashboard queries.
 Generates realistic ad performance data across 100 clients and 10 ad channels,
-loads it into both SQLite and Hive-partitioned Parquet files, then runs a suite
+loads it into both MySQL and Hive-partitioned Parquet files, then runs a suite
 of benchmark queries that simulate common dashboard operations: filtering,
 sorting, aggregation, and time-series analysis.
 Three result files are produced for blog-ready comparison:
-  - results_sqlite.txt   — raw SQLite query results
+  - results_mysql.txt   — raw MySQL query results
   - results_duckdb.txt  — raw DuckDB query results
   - results_comparison.txt — side-by-side comparison with accuracy checks
 Run from repo root:
   pip install -r requirements.txt
   python benchmark.py
-Set SKIP_CLEANUP=1 to keep SQLite database and Parquet files after run.
+Set SKIP_CLEANUP=1 to keep MySQL database and Parquet files after run.
 """
 
 import os
@@ -25,13 +25,15 @@ from decimal import Decimal
 
 from dotenv import load_dotenv
 
-# Load .env file before reading any environment variables.
-# A missing .env is silently ignored so CI / production env vars still work.
+# ---------------------------------------------------------------------------
+# Configuration (loaded from .env, then environment variables)
+# ---------------------------------------------------------------------------
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-# ---------------------------------------------------------------------------
-# Configuration (adjust via environment variables or .env file)
-# ---------------------------------------------------------------------------
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
+MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
+MYSQL_USER = os.environ.get("MYSQL_USER", "root")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 
 NUM_ROWS = int(os.environ.get("NUM_ROWS", "10_000_000"))
 RANDOM_SEED = 42
@@ -196,11 +198,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(SCRIPT_DIR, "data")
 PARQUET_BASE = os.path.join(DATA_DIR, "insights")
 DB_NAME = "benchmark_poc_db"
-SQLITE_DB_PATH = os.path.join(DATA_DIR, f"{DB_NAME}.db")
 NUM_RUNS = 3
 SKIP_CLEANUP = os.environ.get("SKIP_CLEANUP", "0") == "1"
 
-SQLITE_RESULTS_FILE = os.path.join(SCRIPT_DIR, "results_sqlite.txt")
+MYSQL_RESULTS_FILE = os.path.join(SCRIPT_DIR, "results_mysql.txt")
 DUCKDB_RESULTS_FILE = os.path.join(SCRIPT_DIR, "results_duckdb.txt")
 COMPARISON_FILE = os.path.join(SCRIPT_DIR, "results_comparison.txt")
 
@@ -231,7 +232,7 @@ def make_k_in(client_ids, channel_ids):
 def normalize_value(val):
     """Normalize a query result value for cross-engine comparison.
     Converts Decimal, date, and other types to standard Python types
-    so SQLite and DuckDB results can be compared accurately.
+    so MySQL and DuckDB results can be compared accurately.
     Args:
         val: A single value from a query result row.
     Returns:
@@ -402,24 +403,30 @@ def generate_data():
 # ---------------------------------------------------------------------------
 # Step 2: Load into MySQL
 # ---------------------------------------------------------------------------
-def load_sqlite(rows):
-    """Create the SQLite table and bulk-insert all rows.
+def load_mysql(rows):
+    """Create the MySQL table and bulk-insert all rows.
     Args:
         rows: The generated data rows.
     """
-    print("\n=== Step 2: Loading into SQLite ===\n")
-    import sqlite3
+    print("\n=== Step 2: Loading into MySQL ===\n")
+    import mysql.connector
 
-    os.makedirs(DATA_DIR, exist_ok=True)
-    if os.path.exists(SQLITE_DB_PATH):
-        os.remove(SQLITE_DB_PATH)
-
-    conn = sqlite3.connect(SQLITE_DB_PATH)
+    conn = mysql.connector.connect(
+        host=MYSQL_HOST,
+        port=MYSQL_PORT,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        autocommit=False,
+    )
     cursor = conn.cursor()
+
+    cursor.execute(f"DROP DATABASE IF EXISTS `{DB_NAME}`")
+    cursor.execute(f"CREATE DATABASE `{DB_NAME}`")
+    conn.database = DB_NAME
 
     cursor.execute("""
         CREATE TABLE ad_insights (
-            id BIGINT NOT NULL PRIMARY KEY,
+            id BIGINT NOT NULL,
             client_id INT NOT NULL,
             channel_id INT NOT NULL,
             ad_account_id VARCHAR(64) NOT NULL,
@@ -431,13 +438,12 @@ def load_sqlite(rows):
             clicks BIGINT NOT NULL,
             spend DOUBLE NOT NULL,
             conversions INT NOT NULL,
-            date DATE NOT NULL
+            date DATE NOT NULL,
+            PRIMARY KEY (id),
+            INDEX idx_client_channel_date (client_id, channel_id, date),
+            INDEX idx_client_date (client_id, date)
         )
     """)
-    cursor.execute(
-        "CREATE INDEX idx_client_channel_date ON ad_insights(client_id, channel_id, date)"
-    )
-    cursor.execute("CREATE INDEX idx_client_date ON ad_insights(client_id, date)")
 
     t0 = time.perf_counter()
     batch_size = 10_000
@@ -448,15 +454,15 @@ def load_sqlite(rows):
             INSERT INTO ad_insights
             (id, client_id, channel_id, ad_account_id, campaign_id, campaign_name,
              ad_id, ad_name, impressions, clicks, spend, conversions, date)
-            VALUES (:id, :client_id, :channel_id, :ad_account_id,
-                    :campaign_id, :campaign_name, :ad_id, :ad_name,
-                    :impressions, :clicks, :spend, :conversions, :date)
+            VALUES (%(id)s, %(client_id)s, %(channel_id)s, %(ad_account_id)s,
+                    %(campaign_id)s, %(campaign_name)s, %(ad_id)s, %(ad_name)s,
+                    %(impressions)s, %(clicks)s, %(spend)s, %(conversions)s, %(date)s)
             """,
             batch,
         )
     conn.commit()
     elapsed_ms = (time.perf_counter() - t0) * 1000
-    print(f"SQLite load: {elapsed_ms:,.0f} ms ({len(rows):,} rows)\n")
+    print(f"MySQL load: {elapsed_ms:,.0f} ms ({len(rows):,} rows)\n")
     cursor.close()
     conn.close()
 
@@ -518,8 +524,8 @@ def load_parquet(rows):
 # ---------------------------------------------------------------------------
 # Step 4 & 5: Query timing helpers
 # ---------------------------------------------------------------------------
-def run_sqlite_query(cursor, sql, params=None):
-    """Execute a SQLite query and return all rows."""
+def run_mysql_query(cursor, sql, params=None):
+    """Execute a MySQL query and return all rows."""
     cursor.execute(sql, params or ())
     return cursor.fetchall()
 
@@ -529,10 +535,10 @@ def run_duckdb_query(conn, sql):
     return conn.execute(sql).fetchall()
 
 
-def time_query_sqlite(cursor, sql, params=None, runs=NUM_RUNS):
-    """Time a SQLite query over multiple runs and return median time + results.
+def time_query_mysql(cursor, sql, params=None, runs=NUM_RUNS):
+    """Time a MySQL query over multiple runs and return median time + results.
     Args:
-        cursor: SQLite cursor.
+        cursor: MySQL cursor.
         sql: SQL query string.
         params: Optional query parameters.
         runs: Number of runs for timing.
@@ -543,7 +549,7 @@ def time_query_sqlite(cursor, sql, params=None, runs=NUM_RUNS):
     result = None
     for _ in range(runs):
         t0 = time.perf_counter()
-        result = run_sqlite_query(cursor, sql, params)
+        result = run_mysql_query(cursor, sql, params)
         times_ms.append((time.perf_counter() - t0) * 1000)
     return statistics.median(times_ms), result
 
@@ -576,13 +582,13 @@ def get_parquet_glob():
 # Step 4 & 5: Define benchmark queries
 # ---------------------------------------------------------------------------
 def define_queries(parquet_ref):
-    """Build the full list of benchmark queries for SQLite and DuckDB.
+    """Build the full list of benchmark queries for MySQL and DuckDB.
     Queries are organized into four categories that mirror real dashboard needs:
       A) Accuracy Verification       — prove both engines return identical results.
       B) Dashboard Filters           — multi-criteria filtering with date ranges.
       C) Sorting & Ranking           — ORDER BY on raw and computed metrics.
       D) Time Series & Widgets       — aggregations for charts and KPI cards.
-      E) Partition & Columnar Proof  — query designed to be slow in SQLite but
+      E) Partition & Columnar Proof  — query designed to be slow in MySQL but
          fast in DuckDB thanks to Hive partition pruning + columnar reads.
     Args:
         parquet_ref: The DuckDB read_parquet(...) glob expression.
@@ -610,7 +616,7 @@ def define_queries(parquet_ref):
             "name": "Total row count",
             "category": "Accuracy Verification",
             "headers": ["total_rows"],
-            "sqlite": """
+            "mysql": """
                 SELECT COUNT(*) AS total_rows
                 FROM ad_insights
             """,
@@ -629,7 +635,7 @@ def define_queries(parquet_ref):
                 "total_spend",
                 "total_conversions",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT SUM(impressions) AS total_impressions,
                        SUM(clicks)      AS total_clicks,
                        ROUND(SUM(spend), 2) AS total_spend,
@@ -656,7 +662,7 @@ def define_queries(parquet_ref):
                 "total_spend",
                 "total_conversions",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT channel_id,
                        COUNT(*)          AS row_count,
                        SUM(impressions)  AS total_impressions,
@@ -698,7 +704,7 @@ def define_queries(parquet_ref):
                 "conversions",
                 "date",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT id, ad_id, ad_name, impressions, clicks, spend,
                        conversions, date
                 FROM ad_insights
@@ -731,7 +737,7 @@ def define_queries(parquet_ref):
                 "total_spend",
                 "total_conversions",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT client_id, channel_id, campaign_id, campaign_name,
                        SUM(impressions) AS total_impressions,
                        SUM(clicks)      AS total_clicks,
@@ -773,7 +779,7 @@ def define_queries(parquet_ref):
                 "total_clicks",
                 "total_spend",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT campaign_id, campaign_name, channel_id,
                        SUM(impressions) AS total_impressions,
                        SUM(clicks)      AS total_clicks,
@@ -814,7 +820,7 @@ def define_queries(parquet_ref):
                 "total_spend",
                 "total_conversions",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT ad_id, ad_name, channel_id,
                        SUM(impressions) AS total_impressions,
                        SUM(clicks)      AS total_clicks,
@@ -851,7 +857,7 @@ def define_queries(parquet_ref):
                 "total_impressions",
                 "ctr_pct",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT campaign_id, campaign_name, channel_id,
                        SUM(clicks)      AS total_clicks,
                        SUM(impressions)  AS total_impressions,
@@ -892,7 +898,7 @@ def define_queries(parquet_ref):
                 "total_conversions",
                 "cost_per_conv",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT ad_id, ad_name, channel_id,
                        ROUND(SUM(spend), 2) AS total_spend,
                        SUM(conversions)  AS total_conversions,
@@ -935,7 +941,7 @@ def define_queries(parquet_ref):
                 "daily_spend",
                 "daily_conversions",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT date,
                        SUM(impressions) AS daily_impressions,
                        SUM(clicks)      AS daily_clicks,
@@ -972,8 +978,8 @@ def define_queries(parquet_ref):
                 "monthly_spend",
                 "monthly_conversions",
             ],
-            "sqlite": """
-                SELECT CAST(strftime('%m', date) AS INTEGER)       AS month,
+            "mysql": """
+                SELECT MONTH(date)       AS month,
                        channel_id,
                        SUM(impressions)  AS monthly_impressions,
                        SUM(clicks)       AS monthly_clicks,
@@ -982,7 +988,7 @@ def define_queries(parquet_ref):
                 FROM ad_insights
                 WHERE client_id = 1
                   AND date BETWEEN '2024-01-01' AND '2024-12-31'
-                GROUP BY CAST(strftime('%m', date) AS INTEGER), channel_id
+                GROUP BY MONTH(date), channel_id
                 ORDER BY month, channel_id
             """,
             "duckdb": f"""
@@ -1004,7 +1010,7 @@ def define_queries(parquet_ref):
             "name": "Channel spend distribution % (pie chart)",
             "category": "Time Series & Widgets",
             "headers": ["channel_id", "channel_spend", "pct_of_total"],
-            "sqlite": """
+            "mysql": """
                 SELECT channel_id,
                        ROUND(SUM(spend), 2) AS channel_spend,
                        ROUND(SUM(spend) * 100.0 / (
@@ -1034,12 +1040,12 @@ def define_queries(parquet_ref):
         # =================================================================
         # E) Partition & Columnar Proof
         #
-        # This query is *designed* to be slow in SQLite but fast in DuckDB:
+        # This query is *designed* to be slow in MySQL but fast in DuckDB:
         #
-        # SQLite weakness:
+        # MySQL weakness:
         #   - Filters on channel_id=2 WITHOUT client_id.  Neither composite
         #     index (client_id, channel_id, date) nor (client_id, date)
-        #     starts with channel_id, so SQLite falls back to a FULL TABLE
+        #     starts with channel_id, so MySQL falls back to a FULL TABLE
         #     SCAN of all rows.
         #   - Row-store reads every column of every row even though we only
         #     need date, impressions, clicks, spend, and conversions.
@@ -1065,8 +1071,8 @@ def define_queries(parquet_ref):
                 "total_spend",
                 "total_conversions",
             ],
-            "sqlite": """
-                SELECT CAST(strftime('%m', date) AS INTEGER)       AS month,
+            "mysql": """
+                SELECT MONTH(date)       AS month,
                        COUNT(*)          AS row_count,
                        SUM(impressions)  AS total_impressions,
                        SUM(clicks)       AS total_clicks,
@@ -1075,7 +1081,7 @@ def define_queries(parquet_ref):
                 FROM ad_insights
                 WHERE channel_id = 2
                   AND date BETWEEN '2024-01-01' AND '2024-12-31'
-                GROUP BY CAST(strftime('%m', date) AS INTEGER)
+                GROUP BY MONTH(date)
                 ORDER BY month
             """,
             "duckdb": f"""
@@ -1097,7 +1103,7 @@ def define_queries(parquet_ref):
         #
         # This query DOES include client_id — matching real dashboard usage.
         #
-        # SQLite weakness (despite the index being usable):
+        # MySQL weakness (despite the index being usable):
         #   - The composite index (client_id, channel_id, date) narrows to
         #     ~1M rows for client_id=1, but impressions, clicks, spend, and
         #     conversions are NOT in the index.  For every matching row MySQL
@@ -1135,7 +1141,7 @@ def define_queries(parquet_ref):
                 "ctr_pct",
                 "cost_per_conv",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT ad_id, ad_name, channel_id,
                        SUM(impressions)  AS total_impressions,
                        SUM(clicks)       AS total_clicks,
@@ -1171,7 +1177,7 @@ def define_queries(parquet_ref):
             """,
         },
         # =================================================================
-        # F) Row-Based Fetching (SQLite Strength)
+        # F) Row-Based Fetching (MySQL Strength)
         # =================================================================
         {
             "id": "F1",
@@ -1192,7 +1198,7 @@ def define_queries(parquet_ref):
                 "conversions",
                 "date",
             ],
-            "sqlite": """
+            "mysql": """
                 SELECT id, client_id, channel_id, ad_account_id,
                        campaign_id, campaign_name, ad_id, ad_name,
                        impressions, clicks, spend, conversions, date
@@ -1218,19 +1224,24 @@ def define_queries(parquet_ref):
 # Step 4 & 5: Run all benchmark queries
 # ---------------------------------------------------------------------------
 def run_benchmarks():
-    """Execute all benchmark queries against both SQLite and DuckDB.
+    """Execute all benchmark queries against both MySQL and DuckDB.
     Returns:
         A list of result dicts, each containing: id, name, category, headers,
-        ms_sqlite, ms_duckdb, rows_sqlite, rows_duckdb.
+        ms_mysql, ms_duckdb, rows_mysql, rows_duckdb.
     """
     print("\n=== Step 4 & 5: Running benchmark queries ===\n")
 
-    import sqlite3
-
     import duckdb
+    import mysql.connector
 
-    sqlite_conn = sqlite3.connect(SQLITE_DB_PATH)
-    sqlite_cursor = sqlite_conn.cursor()
+    mysql_conn = mysql.connector.connect(
+        host=MYSQL_HOST,
+        port=MYSQL_PORT,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        database=DB_NAME,
+    )
+    mysql_cursor = mysql_conn.cursor()
 
     duck_conn = duckdb.connect(":memory:")
     parquet_ref = get_parquet_glob()
@@ -1242,11 +1253,11 @@ def run_benchmarks():
         label = f"[{q['id']}] {q['name']}"
         print(f"  Running: {label} ... ", end="", flush=True)
 
-        ms_sqlite, rows_sqlite = time_query_sqlite(sqlite_cursor, q["sqlite"])
+        ms_mysql, rows_mysql = time_query_mysql(mysql_cursor, q["mysql"])
         ms_duck, rows_duck = time_query_duckdb(duck_conn, q["duckdb"])
-        speedup = ms_sqlite / ms_duck if ms_duck > 0 else float("inf")
+        speedup = ms_mysql / ms_duck if ms_duck > 0 else float("inf")
 
-        print(f"SQLite {ms_sqlite:,.1f}ms | DuckDB {ms_duck:,.1f}ms | {speedup:.1f}x")
+        print(f"MySQL {ms_mysql:,.1f}ms | DuckDB {ms_duck:,.1f}ms | {speedup:.1f}x")
 
         results.append(
             {
@@ -1254,15 +1265,15 @@ def run_benchmarks():
                 "name": q["name"],
                 "category": q["category"],
                 "headers": q["headers"],
-                "ms_sqlite": ms_sqlite,
+                "ms_mysql": ms_mysql,
                 "ms_duckdb": ms_duck,
-                "rows_sqlite": rows_sqlite,
+                "rows_mysql": rows_mysql,
                 "rows_duckdb": rows_duck,
             }
         )
 
-    sqlite_cursor.close()
-    sqlite_conn.close()
+    mysql_cursor.close()
+    mysql_conn.close()
     duck_conn.close()
 
     return results
@@ -1280,8 +1291,8 @@ def write_single_engine_results(filepath, engine_name, results):
     """
     from tabulate import tabulate
 
-    rows_key = "rows_sqlite" if engine_name == "SQLite" else "rows_duckdb"
-    ms_key = "ms_sqlite" if engine_name == "SQLite" else "ms_duckdb"
+    rows_key = "rows_mysql" if engine_name == "MySQL" else "rows_duckdb"
+    ms_key = "ms_mysql" if engine_name == "MySQL" else "ms_duckdb"
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(f"{'=' * 72}\n")
@@ -1327,7 +1338,7 @@ def write_comparison_file(results):
     with open(COMPARISON_FILE, "w", encoding="utf-8") as f:
         # === Header ===
         f.write("=" * 78 + "\n")
-        f.write("  BENCHMARK COMPARISON: SQLite vs DuckDB + Parquet\n")
+        f.write("  BENCHMARK COMPARISON: MySQL vs DuckDB + Parquet\n")
         f.write(
             f"  Dataset:    {NUM_ROWS:,} rows | "
             f"{NUM_CLIENTS} clients | {NUM_CHANNELS} channels\n"
@@ -1341,31 +1352,31 @@ def write_comparison_file(results):
         f.write("PERFORMANCE SUMMARY\n")
         f.write("-" * 78 + "\n")
         summary_rows = []
-        total_sqlite = 0
+        total_mysql = 0
         total_duck = 0
         match_count = 0
         for r in results:
             speedup = (
-                r["ms_sqlite"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else float("inf")
+                r["ms_mysql"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else float("inf")
             )
-            matched, _ = results_match(r["rows_sqlite"], r["rows_duckdb"])
+            matched, _ = results_match(r["rows_mysql"], r["rows_duckdb"])
             match_str = "YES" if matched else "NO"
             if matched:
                 match_count += 1
-            total_sqlite += r["ms_sqlite"]
+            total_mysql += r["ms_mysql"]
             total_duck += r["ms_duckdb"]
             summary_rows.append(
                 [
                     r["id"],
                     r["name"],
-                    f"{r['ms_sqlite']:,.1f}",
+                    f"{r['ms_mysql']:,.1f}",
                     f"{r['ms_duckdb']:,.1f}",
                     f"{speedup:.1f}x",
                     match_str,
                 ]
             )
 
-        overall_speedup = total_sqlite / total_duck if total_duck > 0 else 0
+        overall_speedup = total_mysql / total_duck if total_duck > 0 else 0
         summary_rows.append(
             [
                 "",
@@ -1380,7 +1391,7 @@ def write_comparison_file(results):
             [
                 "",
                 "TOTAL",
-                f"{total_sqlite:,.1f}",
+                f"{total_mysql:,.1f}",
                 f"{total_duck:,.1f}",
                 f"{overall_speedup:.1f}x",
                 f"{match_count}/{len(results)}",
@@ -1390,14 +1401,7 @@ def write_comparison_file(results):
         f.write(
             tabulate(
                 summary_rows,
-                headers=[
-                    "#",
-                    "Query",
-                    "SQLite (ms)",
-                    "DuckDB (ms)",
-                    "Speedup",
-                    "Match",
-                ],
+                headers=["#", "Query", "MySQL (ms)", "DuckDB (ms)", "Speedup", "Match"],
                 tablefmt="simple",
                 colalign=("left", "left", "right", "right", "right", "center"),
             )
@@ -1411,10 +1415,10 @@ def write_comparison_file(results):
 
         for r in results:
             speedup = (
-                r["ms_sqlite"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else float("inf")
+                r["ms_mysql"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else float("inf")
             )
             matched, match_detail = results_match(
-                r["rows_sqlite"],
+                r["rows_mysql"],
                 r["rows_duckdb"],
             )
             match_symbol = "PASS" if matched else "FAIL"
@@ -1423,8 +1427,8 @@ def write_comparison_file(results):
             f.write(f"[{r['id']}] {r['name']}\n")
             f.write(f"Category:    {r['category']}\n")
             f.write(
-                f"SQLite:       {r['ms_sqlite']:,.1f} ms "
-                f"({len(r['rows_sqlite']):,} rows)\n"
+                f"MySQL:       {r['ms_mysql']:,.1f} ms "
+                f"({len(r['rows_mysql']):,} rows)\n"
             )
             f.write(
                 f"DuckDB:      {r['ms_duckdb']:,.1f} ms "
@@ -1434,11 +1438,11 @@ def write_comparison_file(results):
             f.write(f"Accuracy:    {match_symbol} — {match_detail}\n")
             f.write("─" * 78 + "\n\n")
 
-            # SQLite results
-            f.write("  >>> SQLite Result:\n")
-            if r["rows_sqlite"]:
+            # MySQL results
+            f.write("  >>> MySQL Result:\n")
+            if r["rows_mysql"]:
                 table_str = tabulate(
-                    r["rows_sqlite"],
+                    r["rows_mysql"],
                     headers=r["headers"],
                     tablefmt="simple",
                     floatfmt=",.2f",
@@ -1492,12 +1496,12 @@ def print_results(results):
         for r in results:
             if r["category"] != cat:
                 continue
-            speedup = r["ms_sqlite"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else 0
-            matched, _ = results_match(r["rows_sqlite"], r["rows_duckdb"])
+            speedup = r["ms_mysql"] / r["ms_duckdb"] if r["ms_duckdb"] > 0 else 0
+            matched, _ = results_match(r["rows_mysql"], r["rows_duckdb"])
             table_data.append(
                 [
                     f"  [{r['id']}] {r['name']}",
-                    f"{r['ms_sqlite']:,.1f}",
+                    f"{r['ms_mysql']:,.1f}",
                     f"{r['ms_duckdb']:,.1f}",
                     f"{speedup:.1f}x",
                     "YES" if matched else "NO",
@@ -1507,21 +1511,21 @@ def print_results(results):
     print(
         tabulate(
             table_data,
-            headers=["Query", "SQLite (ms)", "DuckDB (ms)", "Speedup", "Match"],
+            headers=["Query", "MySQL (ms)", "DuckDB (ms)", "Speedup", "Match"],
             tablefmt="simple",
             colalign=("left", "right", "right", "right", "center"),
         )
     )
 
     # Totals
-    total_sqlite = sum(r["ms_sqlite"] for r in results)
+    total_mysql = sum(r["ms_mysql"] for r in results)
     total_duck = sum(r["ms_duckdb"] for r in results)
-    overall = total_sqlite / total_duck if total_duck > 0 else 0
+    overall = total_mysql / total_duck if total_duck > 0 else 0
     match_count = sum(
-        1 for r in results if results_match(r["rows_sqlite"], r["rows_duckdb"])[0]
+        1 for r in results if results_match(r["rows_mysql"], r["rows_duckdb"])[0]
     )
     print(
-        f"\nTotal:  SQLite {total_sqlite:,.1f} ms | "
+        f"\nTotal:  MySQL {total_mysql:,.1f} ms | "
         f"DuckDB {total_duck:,.1f} ms | "
         f"Overall {overall:.1f}x | "
         f"Accuracy {match_count}/{len(results)} matched"
@@ -1536,7 +1540,7 @@ def print_results(results):
 
     print(f"\nParquet data size: {parquet_size / (1024 * 1024):.2f} MB")
     print(
-        "(SQLite data dir size depends on your SQLite datadir; "
+        "(MySQL data dir size depends on your MySQL datadir; "
         "compare manually if needed.)\n"
     )
 
@@ -1545,40 +1549,57 @@ def print_results(results):
 # Cleanup
 # ---------------------------------------------------------------------------
 def cleanup():
-    """Remove the SQLite database and Parquet data directory."""
+    """Remove the MySQL database and Parquet data directory."""
     if SKIP_CLEANUP:
         print("Skipping cleanup (SKIP_CLEANUP=1).\n")
         return
     print("\n=== Cleanup ===\n")
-    if os.path.exists(SQLITE_DB_PATH):
-        os.remove(SQLITE_DB_PATH)
-        print(f"Removed SQLite database at {SQLITE_DB_PATH}.")
+    try:
+        import mysql.connector
+
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            autocommit=True,
+        )
+        cur = conn.cursor()
+        cur.execute(f"DROP DATABASE IF EXISTS `{DB_NAME}`")
+        cur.close()
+        conn.close()
+        print(f"Dropped MySQL database `{DB_NAME}`.")
+    except Exception as e:
+        print(f"MySQL cleanup warning: {e}")
     if os.path.exists(DATA_DIR):
         shutil.rmtree(DATA_DIR)
         print(f"Removed {DATA_DIR}\n")
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 def main():
     """Orchestrate the full benchmark pipeline."""
 
     print("\n" + "=" * 60)
-    print("  Benchmark: SQLite vs Parquet + DuckDB")
+    print("  Benchmark: MySQL vs Parquet + DuckDB")
     print(f"  {NUM_ROWS:,} rows | {NUM_CLIENTS} clients | {NUM_CHANNELS} channels")
     print("=" * 60)
     cleanup()
     rows = generate_data()
-    load_sqlite(rows)
+    load_mysql(rows)
     load_parquet(rows)
 
     bench_results = run_benchmarks()
 
     # Write all three result files
-    write_single_engine_results(SQLITE_RESULTS_FILE, "SQLite", bench_results)
+    write_single_engine_results(MYSQL_RESULTS_FILE, "MySQL", bench_results)
     write_single_engine_results(DUCKDB_RESULTS_FILE, "DuckDB", bench_results)
     write_comparison_file(bench_results)
 
     print("\nResult files written:")
-    print(f"  SQLite results  -> {SQLITE_RESULTS_FILE}")
+    print(f"  MySQL results  -> {MYSQL_RESULTS_FILE}")
     print(f"  DuckDB results -> {DUCKDB_RESULTS_FILE}")
     print(f"  Comparison     -> {COMPARISON_FILE}")
 

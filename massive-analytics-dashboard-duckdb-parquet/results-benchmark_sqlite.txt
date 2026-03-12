@@ -1,0 +1,85 @@
+enchmark_sqlite.py
+
+============================================================
+  Benchmark: SQLite vs Parquet + DuckDB
+  10,000,000 rows | 100 clients | 10 channels
+============================================================
+
+=== Cleanup ===
+
+Removed C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\data
+
+
+=== Step 1: Generating realistic ad performance data ===
+
+Generated 10,000,000 rows
+  Clients:       100 (Apex Retail Corp, Bolt Technology Co, Crest Food & Beverage Inc, ...)
+  Channels:      10 (Facebook, Google, TikTok, LinkedIn, Snapchat, Pinterest, YouTube, X (Twitter), Reddit, Amazon Ads)
+  Date range:    2024-01-01 to 2024-12-31 (366 days)
+  Ads/partition: ~28
+  Sample row:    {'id': 1, 'client_id': 1, 'channel_id': 1, 'ad_account_id': 'acc_001_01', 'campaign_id': 'camp_001_01_000', 'campaign_name': 'Brand Awareness - Retail - Facebook', 'ad_id': 'ad_001_01_000', 'ad_name': 'Video 30s - Brand Awareness #1', 'impressions': 47095, 'clicks': 323, 'spend': 215.14, 'conversions': 5, 'date': '2024-01-01', 'k': '00101'}
+
+
+=== Step 2: Loading into SQLite ===
+
+SQLite load: 43,290 ms (10,000,000 rows)
+
+
+=== Step 3: Writing Parquet (Hive partitioning) ===
+
+Parquet write: 12,594 ms (10,000,000 rows)
+
+
+=== Step 4 & 5: Running benchmark queries ===
+
+  Running: [A1] Total row count ... SQLite 151.7ms | DuckDB 454.2ms | 0.3x
+  Running: [A2] Global SUM aggregates ... SQLite 2,164.9ms | DuckDB 482.9ms | 4.5x
+  Running: [A3] Per-channel breakdown (client 1) ... SQLite 45.5ms | DuckDB 282.3ms | 0.2x
+  Running: [B1] Single client + channel + month filter ... SQLite 0.9ms | DuckDB 271.1ms | 0.0x
+  Running: [B2] Multi-client + channels + Q3 + spend threshold ... SQLite 47.4ms | DuckDB 292.4ms | 0.2x
+  Running: [B3] Campaign name search (LIKE) + date range ... SQLite 30.8ms | DuckDB 284.9ms | 0.1x
+  Running: [C1] Top 10 ads by total spend ... SQLite 108.4ms | DuckDB 285.9ms | 0.4x
+  Running: [C2] Top campaigns by CTR (computed metric sort) ... SQLite 103.8ms | DuckDB 289.9ms | 0.4x
+  Running: [C3] Worst cost-per-conversion (bottom performers) ... SQLite 97.0ms | DuckDB 286.5ms | 0.3x
+  Running: [D1] Daily spend trend (line chart — June 2024) ... SQLite 0.4ms | DuckDB 271.8ms | 0.0x
+  Running: [D2] Monthly rollup by channel (bar chart — full year) ... SQLite 103.2ms | DuckDB 285.8ms | 0.4x
+  Running: [D3] Channel spend distribution % (pie chart) ... SQLite 86.7ms | DuckDB 563.2ms | 0.2x
+  Running: [E1] Channel-only filter: monthly rollup across all clients ... SQLite 2,200.9ms | DuckDB 378.5ms | 5.8x
+  Running: [E2] Ad-level rollup + computed CTR & CPA (single client) ... SQLite 110.8ms | DuckDB 285.2ms | 0.4x
+  Running: [F1] SELECT * for specific client/date (Row fetch) ... SQLite 26.4ms | DuckDB 299.3ms | 0.1x
+
+Result files written:
+  SQLite results  -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_sqlite.txt
+  DuckDB results -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_duckdb.txt
+  Comparison     -> C:\Users\avina\codebase\github-base\duckdb-101\massive-analytics-dashboard-duckdb-parquet\results_comparison.txt
+
+=== Step 6: Results ===
+
+Query                                                          SQLite (ms)    DuckDB (ms)    Speedup   Match
+-----------------------------------------------------------  -------------  -------------  ---------  -------
+--- Accuracy Verification ---
+[A1] Total row count                                                 151.7          454.2       0.3x    YES
+[A2] Global SUM aggregates                                          2164.9          482.9       4.5x    YES
+[A3] Per-channel breakdown (client 1)                                 45.5          282.3       0.2x    YES
+--- Dashboard Filters ---
+[B1] Single client + channel + month filter                            0.9          271.1       0.0x    YES
+[B2] Multi-client + channels + Q3 + spend threshold                   47.4          292.4       0.2x    YES
+[B3] Campaign name search (LIKE) + date range                         30.8          284.9       0.1x    YES
+--- Sorting & Ranking ---
+[C1] Top 10 ads by total spend                                       108.4          285.9       0.4x    YES
+[C2] Top campaigns by CTR (computed metric sort)                     103.8          289.9       0.4x    YES
+[C3] Worst cost-per-conversion (bottom performers)                      97          286.5       0.3x    YES
+--- Time Series & Widgets ---
+[D1] Daily spend trend (line chart — June 2024)                        0.4          271.8       0.0x    YES
+[D2] Monthly rollup by channel (bar chart — full year)               103.2          285.8       0.4x    YES
+[D3] Channel spend distribution % (pie chart)                         86.7          563.2       0.2x    YES
+--- Partition & Columnar Proof ---
+[E1] Channel-only filter: monthly rollup across all clients         2200.9          378.5       5.8x    YES
+[E2] Ad-level rollup + computed CTR & CPA (single client)            110.8          285.2       0.4x    YES
+--- Row-Based Fetching ---
+[F1] SELECT * for specific client/date (Row fetch)                    26.4          299.3       0.1x    YES
+
+Total:  SQLite 5,278.7 ms | DuckDB 5,013.9 ms | Overall 1.1x | Accuracy 15/15 matched
+
+Parquet data size: 196.03 MB
+(SQLite data dir size depends on your SQLite datadir; compare manually if needed.)

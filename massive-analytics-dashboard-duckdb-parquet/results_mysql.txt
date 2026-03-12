@@ -1,5 +1,5 @@
 ========================================================================
-  DuckDB Query Results
+  MySQL Query Results
   Generated: 2026-03-13 02:49:01
   Dataset: 10,000,000 rows | 100 clients | 10 channels
 ========================================================================
@@ -7,7 +7,7 @@
 ────────────────────────────────────────────────────────────────────────
 [A1] Total row count
 Category: Accuracy Verification
-Time: 425.4 ms | Rows: 1
+Time: 2,572.1 ms | Rows: 1
 ────────────────────────────────────────────────────────────────────────
   total_rows
 ------------
@@ -16,34 +16,34 @@ Time: 425.4 ms | Rows: 1
 ────────────────────────────────────────────────────────────────────────
 [A2] Global SUM aggregates
 Category: Accuracy Verification
-Time: 604.0 ms | Rows: 1
+Time: 14,264.4 ms | Rows: 1
 ────────────────────────────────────────────────────────────────────────
-  total_impressions    total_clicks        total_spend    total_conversions
--------------------  --------------  -----------------  -------------------
-  1,211,003,524,173  51,448,633,842  78,981,402,302.39          986,755,046
+   total_impressions       total_clicks        total_spend    total_conversions
+--------------------  -----------------  -----------------  -------------------
+1,211,003,524,173.00  51,448,633,842.00  78,981,402,302.39       986,755,046.00
 
 ────────────────────────────────────────────────────────────────────────
 [A3] Per-channel breakdown (client 1)
 Category: Accuracy Verification
-Time: 317.4 ms | Rows: 10
+Time: 91.2 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
   channel_id    row_count    total_impressions    total_clicks     total_spend    total_conversions
 ------------  -----------  -------------------  --------------  --------------  -------------------
-           1       10,248        1,578,525,717      68,015,917   95,435,992.58            1,705,085
-           2       10,248          778,118,534      33,042,408  145,705,816.86            1,473,550
-           3       10,248        2,572,939,540     109,500,492   88,717,688.09            1,091,466
-           4       10,248          262,859,095      11,141,270   98,499,148.92              384,632
-           5       10,248        2,076,066,663      88,100,804   47,745,032.91              705,227
-           6       10,248        1,043,032,833      44,364,459   48,428,040.29            1,317,971
-           7       10,248        1,298,932,286      54,990,856   87,982,175.52              820,892
-           8       10,248          935,312,346      39,486,629   74,412,957.31              469,549
-           9       10,248        1,139,603,378      48,541,944   52,952,675.36              957,315
-          10       10,248          413,242,838      17,414,738   47,925,836.16              956,530
+           1       10,248     1,578,525,717.00   68,015,917.00   95,435,992.58         1,705,085.00
+           2       10,248       778,118,534.00   33,042,408.00  145,705,816.86         1,473,550.00
+           3       10,248     2,572,939,540.00  109,500,492.00   88,717,688.09         1,091,466.00
+           4       10,248       262,859,095.00   11,141,270.00   98,499,148.92           384,632.00
+           5       10,248     2,076,066,663.00   88,100,804.00   47,745,032.91           705,227.00
+           6       10,248     1,043,032,833.00   44,364,459.00   48,428,040.29         1,317,971.00
+           7       10,248     1,298,932,286.00   54,990,856.00   87,982,175.52           820,892.00
+           8       10,248       935,312,346.00   39,486,629.00   74,412,957.31           469,549.00
+           9       10,248     1,139,603,378.00   48,541,944.00   52,952,675.36           957,315.00
+          10       10,248       413,242,838.00   17,414,738.00   47,925,836.16           956,530.00
 
 ────────────────────────────────────────────────────────────────────────
 [B1] Single client + channel + month filter
 Category: Dashboard Filters
-Time: 306.3 ms | Rows: 500
+Time: 2.0 ms | Rows: 500
 ────────────────────────────────────────────────────────────────────────
     id  ad_id          ad_name                            impressions    clicks      spend    conversions  date
 ------  -------------  -------------------------------  -------------  --------  ---------  -------------  ----------
@@ -551,313 +551,313 @@ Time: 306.3 ms | Rows: 500
 ────────────────────────────────────────────────────────────────────────
 [B2] Multi-client + channels + Q3 + spend threshold
 Category: Dashboard Filters
-Time: 343.6 ms | Rows: 20
+Time: 88.8 ms | Rows: 20
 ────────────────────────────────────────────────────────────────────────
   client_id    channel_id  campaign_id      campaign_name                           total_impressions    total_clicks    total_spend    total_conversions
 -----------  ------------  ---------------  ------------------------------------  -------------------  --------------  -------------  -------------------
-         15             2  camp_015_02_027  Conversion - Sports - Google                    7,077,353         310,514   1,475,141.64               13,050
-         15             2  camp_015_02_023  Engagement - Sports - Google                    6,809,868         340,198   1,427,168.21               15,045
-         30             2  camp_030_02_007  Retargeting - Automotive - Google               6,827,278         316,126   1,407,643.65               14,475
-        100             2  camp_100_02_023  Engagement - Aerospace - Google                 7,389,688         329,591   1,403,035.87               14,636
-         75             2  camp_075_02_009  Conversion - Aerospace - Google                 7,160,655         327,884   1,374,163.91               15,508
-         50             2  camp_050_02_012  Brand Awareness - Aerospace - Google            6,799,699         303,488   1,374,136.99               13,649
-        100             2  camp_100_02_007  Retargeting - Aerospace - Google                6,839,812         305,103   1,347,879.05               13,571
-         75             2  camp_075_02_006  Brand Awareness - Aerospace - Google            6,085,082         292,718   1,344,609.14               12,465
-        100             2  camp_100_02_027  Conversion - Aerospace - Google                 6,730,147         309,650   1,324,422.33               13,541
-         30             2  camp_030_02_025  Retargeting - Automotive - Google               6,844,491         314,552   1,311,555.41               14,847
-          1             2  camp_001_02_004  Prospecting - Retail - Google                   6,304,264         281,620   1,310,308.38               13,558
-         50             2  camp_050_02_015  Conversion - Aerospace - Google                 6,773,387         316,763   1,308,546.91               14,172
-        100             2  camp_100_02_001  Retargeting - Aerospace - Google                6,650,004         303,138   1,303,611.79               14,285
-         50             2  camp_050_02_011  Engagement - Aerospace - Google                 7,315,966         309,951   1,271,045.64               13,885
-        100             2  camp_100_02_003  Conversion - Aerospace - Google                 7,218,696         298,966   1,270,760.33               13,287
-         15             2  camp_015_02_021  Conversion - Sports - Google                    6,930,104         302,025   1,261,595.45               13,915
-        100             2  camp_100_02_010  Prospecting - Aerospace - Google                6,555,631         289,472   1,259,812.11               12,650
-          1             2  camp_001_02_010  Prospecting - Retail - Google                   7,121,779         295,407   1,258,830.64               13,507
-         75             2  camp_075_02_005  Engagement - Aerospace - Google                 6,520,414         308,429   1,257,679.52               13,084
-         50             2  camp_050_02_003  Conversion - Aerospace - Google                 6,441,966         277,011   1,257,549.82               11,643
+         15             2  camp_015_02_027  Conversion - Sports - Google                 7,077,353.00      310,514.00   1,475,141.64            13,050.00
+         15             2  camp_015_02_023  Engagement - Sports - Google                 6,809,868.00      340,198.00   1,427,168.21            15,045.00
+         30             2  camp_030_02_007  Retargeting - Automotive - Google            6,827,278.00      316,126.00   1,407,643.65            14,475.00
+        100             2  camp_100_02_023  Engagement - Aerospace - Google              7,389,688.00      329,591.00   1,403,035.87            14,636.00
+         75             2  camp_075_02_009  Conversion - Aerospace - Google              7,160,655.00      327,884.00   1,374,163.91            15,508.00
+         50             2  camp_050_02_012  Brand Awareness - Aerospace - Google         6,799,699.00      303,488.00   1,374,136.99            13,649.00
+        100             2  camp_100_02_007  Retargeting - Aerospace - Google             6,839,812.00      305,103.00   1,347,879.05            13,571.00
+         75             2  camp_075_02_006  Brand Awareness - Aerospace - Google         6,085,082.00      292,718.00   1,344,609.14            12,465.00
+        100             2  camp_100_02_027  Conversion - Aerospace - Google              6,730,147.00      309,650.00   1,324,422.33            13,541.00
+         30             2  camp_030_02_025  Retargeting - Automotive - Google            6,844,491.00      314,552.00   1,311,555.41            14,847.00
+          1             2  camp_001_02_004  Prospecting - Retail - Google                6,304,264.00      281,620.00   1,310,308.38            13,558.00
+         50             2  camp_050_02_015  Conversion - Aerospace - Google              6,773,387.00      316,763.00   1,308,546.91            14,172.00
+        100             2  camp_100_02_001  Retargeting - Aerospace - Google             6,650,004.00      303,138.00   1,303,611.79            14,285.00
+         50             2  camp_050_02_011  Engagement - Aerospace - Google              7,315,966.00      309,951.00   1,271,045.64            13,885.00
+        100             2  camp_100_02_003  Conversion - Aerospace - Google              7,218,696.00      298,966.00   1,270,760.33            13,287.00
+         15             2  camp_015_02_021  Conversion - Sports - Google                 6,930,104.00      302,025.00   1,261,595.45            13,915.00
+        100             2  camp_100_02_010  Prospecting - Aerospace - Google             6,555,631.00      289,472.00   1,259,812.11            12,650.00
+          1             2  camp_001_02_010  Prospecting - Retail - Google                7,121,779.00      295,407.00   1,258,830.64            13,507.00
+         75             2  camp_075_02_005  Engagement - Aerospace - Google              6,520,414.00      308,429.00   1,257,679.52            13,084.00
+         50             2  camp_050_02_003  Conversion - Aerospace - Google              6,441,966.00      277,011.00   1,257,549.82            11,643.00
 
 ────────────────────────────────────────────────────────────────────────
 [B3] Campaign name search (LIKE) + date range
 Category: Dashboard Filters
-Time: 323.9 ms | Rows: 50
+Time: 65.0 ms | Rows: 50
 ────────────────────────────────────────────────────────────────────────
 campaign_id      campaign_name                             channel_id    total_impressions    total_clicks    total_spend
 ---------------  --------------------------------------  ------------  -------------------  --------------  -------------
-camp_002_02_007  Retargeting - Technology - Google                  2           13,083,827         594,038   2,329,395.37
-camp_002_02_025  Retargeting - Technology - Google                  2           13,395,336         560,812   2,077,022.66
-camp_002_02_013  Retargeting - Technology - Google                  2           12,945,399         512,759   2,063,559.03
-camp_002_02_001  Retargeting - Technology - Google                  2           12,195,799         523,611   1,953,358.95
-camp_002_02_019  Retargeting - Technology - Google                  2           11,653,081         514,898   1,856,094.67
-camp_002_04_019  Retargeting - Technology - LinkedIn                4            4,339,625         203,252   1,606,357.40
-camp_002_01_019  Retargeting - Technology - Facebook                1           24,949,565       1,103,299   1,469,791.25
-camp_002_04_007  Retargeting - Technology - LinkedIn                4            4,023,303         177,148   1,446,946.94
-camp_002_01_001  Retargeting - Technology - Facebook                1           25,778,596       1,139,403   1,420,804.38
-camp_002_01_013  Retargeting - Technology - Facebook                1           26,161,331       1,103,004   1,398,962.77
-camp_002_04_025  Retargeting - Technology - LinkedIn                4            4,287,242         174,347   1,380,295.45
-camp_002_04_001  Retargeting - Technology - LinkedIn                4            4,069,627         174,326   1,380,254.75
-camp_002_01_025  Retargeting - Technology - Facebook                1           25,241,673       1,074,833   1,373,349.35
-camp_002_04_013  Retargeting - Technology - LinkedIn                4            4,333,535         193,243   1,365,782.42
-camp_002_07_013  Retargeting - Technology - YouTube                 7           19,950,433         906,981   1,360,028.82
-camp_002_03_007  Retargeting - Technology - TikTok                  3           41,719,243       1,785,667   1,356,814.22
-camp_002_03_025  Retargeting - Technology - TikTok                  3           43,472,042       1,965,515   1,349,192.56
-camp_002_01_007  Retargeting - Technology - Facebook                1           24,202,935       1,103,988   1,339,227.87
-camp_002_07_007  Retargeting - Technology - YouTube                 7           21,167,261         906,460   1,327,661.93
-camp_002_03_001  Retargeting - Technology - TikTok                  3           40,855,891       1,785,244   1,315,405.88
-camp_002_07_019  Retargeting - Technology - YouTube                 7           21,125,084         916,409   1,266,654.89
-camp_002_03_019  Retargeting - Technology - TikTok                  3           40,454,379       1,770,442   1,265,479.51
-camp_002_03_013  Retargeting - Technology - TikTok                  3           41,589,912       1,790,674   1,184,863.80
-camp_002_07_025  Retargeting - Technology - YouTube                 7           20,544,635         810,296   1,182,193.78
-camp_002_08_025  Retargeting - Technology - X (Twitter)             8           15,544,065         701,926   1,163,967.08
-camp_002_08_019  Retargeting - Technology - X (Twitter)             8           15,622,429         653,235   1,122,490.89
-camp_002_08_007  Retargeting - Technology - X (Twitter)             8           16,089,787         685,081   1,108,126.76
-camp_002_07_001  Retargeting - Technology - YouTube                 7           20,145,069         833,234   1,092,623.14
-camp_002_08_013  Retargeting - Technology - X (Twitter)             8           14,647,477         651,013   1,061,237.93
-camp_002_08_001  Retargeting - Technology - X (Twitter)             8           14,052,947         599,429   1,028,498.89
-camp_002_09_025  Retargeting - Technology - Reddit                  9           19,005,196         818,216     814,596.94
-camp_002_09_013  Retargeting - Technology - Reddit                  9           19,562,485         791,667     813,985.23
-camp_002_05_013  Retargeting - Technology - Snapchat                5           35,277,530       1,498,042     766,404.78
-camp_002_09_007  Retargeting - Technology - Reddit                  9           18,949,236         759,990     712,579.27
-camp_002_10_025  Retargeting - Technology - Amazon Ads             10            6,957,548         300,518     711,459.25
-camp_002_05_025  Retargeting - Technology - Snapchat                5           36,484,051       1,557,863     711,059.71
-camp_002_09_019  Retargeting - Technology - Reddit                  9           18,797,440         743,994     703,755.77
-camp_002_06_025  Retargeting - Technology - Pinterest               6           16,773,650         751,392     702,149.74
-camp_002_10_001  Retargeting - Technology - Amazon Ads             10            7,038,057         287,834     698,685.22
-camp_002_10_019  Retargeting - Technology - Amazon Ads             10            6,446,052         289,792     695,370.76
-camp_002_06_007  Retargeting - Technology - Pinterest               6           16,325,203         727,523     692,991.72
-camp_002_10_007  Retargeting - Technology - Amazon Ads             10            6,500,884         284,132     691,074.55
-camp_002_05_019  Retargeting - Technology - Snapchat                5           34,298,674       1,448,545     689,610.63
-camp_002_06_013  Retargeting - Technology - Pinterest               6           16,736,865         691,433     689,310.92
-camp_002_05_007  Retargeting - Technology - Snapchat                5           33,584,553       1,426,499     689,244.91
-camp_002_05_001  Retargeting - Technology - Snapchat                5           35,861,129       1,540,517     686,254.96
-camp_002_09_001  Retargeting - Technology - Reddit                  9           18,617,461         731,131     680,473.50
-camp_002_06_001  Retargeting - Technology - Pinterest               6           15,819,932         676,998     671,514.11
-camp_002_10_013  Retargeting - Technology - Amazon Ads             10            6,733,917         285,343     649,784.74
-camp_002_06_019  Retargeting - Technology - Pinterest               6           15,795,976         674,312     582,360.33
+camp_002_02_007  Retargeting - Technology - Google                  2        13,083,827.00      594,038.00   2,329,395.37
+camp_002_02_025  Retargeting - Technology - Google                  2        13,395,336.00      560,812.00   2,077,022.66
+camp_002_02_013  Retargeting - Technology - Google                  2        12,945,399.00      512,759.00   2,063,559.03
+camp_002_02_001  Retargeting - Technology - Google                  2        12,195,799.00      523,611.00   1,953,358.95
+camp_002_02_019  Retargeting - Technology - Google                  2        11,653,081.00      514,898.00   1,856,094.67
+camp_002_04_019  Retargeting - Technology - LinkedIn                4         4,339,625.00      203,252.00   1,606,357.40
+camp_002_01_019  Retargeting - Technology - Facebook                1        24,949,565.00    1,103,299.00   1,469,791.25
+camp_002_04_007  Retargeting - Technology - LinkedIn                4         4,023,303.00      177,148.00   1,446,946.94
+camp_002_01_001  Retargeting - Technology - Facebook                1        25,778,596.00    1,139,403.00   1,420,804.38
+camp_002_01_013  Retargeting - Technology - Facebook                1        26,161,331.00    1,103,004.00   1,398,962.77
+camp_002_04_025  Retargeting - Technology - LinkedIn                4         4,287,242.00      174,347.00   1,380,295.45
+camp_002_04_001  Retargeting - Technology - LinkedIn                4         4,069,627.00      174,326.00   1,380,254.75
+camp_002_01_025  Retargeting - Technology - Facebook                1        25,241,673.00    1,074,833.00   1,373,349.35
+camp_002_04_013  Retargeting - Technology - LinkedIn                4         4,333,535.00      193,243.00   1,365,782.42
+camp_002_07_013  Retargeting - Technology - YouTube                 7        19,950,433.00      906,981.00   1,360,028.82
+camp_002_03_007  Retargeting - Technology - TikTok                  3        41,719,243.00    1,785,667.00   1,356,814.22
+camp_002_03_025  Retargeting - Technology - TikTok                  3        43,472,042.00    1,965,515.00   1,349,192.56
+camp_002_01_007  Retargeting - Technology - Facebook                1        24,202,935.00    1,103,988.00   1,339,227.87
+camp_002_07_007  Retargeting - Technology - YouTube                 7        21,167,261.00      906,460.00   1,327,661.93
+camp_002_03_001  Retargeting - Technology - TikTok                  3        40,855,891.00    1,785,244.00   1,315,405.88
+camp_002_07_019  Retargeting - Technology - YouTube                 7        21,125,084.00      916,409.00   1,266,654.89
+camp_002_03_019  Retargeting - Technology - TikTok                  3        40,454,379.00    1,770,442.00   1,265,479.51
+camp_002_03_013  Retargeting - Technology - TikTok                  3        41,589,912.00    1,790,674.00   1,184,863.80
+camp_002_07_025  Retargeting - Technology - YouTube                 7        20,544,635.00      810,296.00   1,182,193.78
+camp_002_08_025  Retargeting - Technology - X (Twitter)             8        15,544,065.00      701,926.00   1,163,967.08
+camp_002_08_019  Retargeting - Technology - X (Twitter)             8        15,622,429.00      653,235.00   1,122,490.89
+camp_002_08_007  Retargeting - Technology - X (Twitter)             8        16,089,787.00      685,081.00   1,108,126.76
+camp_002_07_001  Retargeting - Technology - YouTube                 7        20,145,069.00      833,234.00   1,092,623.14
+camp_002_08_013  Retargeting - Technology - X (Twitter)             8        14,647,477.00      651,013.00   1,061,237.93
+camp_002_08_001  Retargeting - Technology - X (Twitter)             8        14,052,947.00      599,429.00   1,028,498.89
+camp_002_09_025  Retargeting - Technology - Reddit                  9        19,005,196.00      818,216.00     814,596.94
+camp_002_09_013  Retargeting - Technology - Reddit                  9        19,562,485.00      791,667.00     813,985.23
+camp_002_05_013  Retargeting - Technology - Snapchat                5        35,277,530.00    1,498,042.00     766,404.78
+camp_002_09_007  Retargeting - Technology - Reddit                  9        18,949,236.00      759,990.00     712,579.27
+camp_002_10_025  Retargeting - Technology - Amazon Ads             10         6,957,548.00      300,518.00     711,459.25
+camp_002_05_025  Retargeting - Technology - Snapchat                5        36,484,051.00    1,557,863.00     711,059.71
+camp_002_09_019  Retargeting - Technology - Reddit                  9        18,797,440.00      743,994.00     703,755.77
+camp_002_06_025  Retargeting - Technology - Pinterest               6        16,773,650.00      751,392.00     702,149.74
+camp_002_10_001  Retargeting - Technology - Amazon Ads             10         7,038,057.00      287,834.00     698,685.22
+camp_002_10_019  Retargeting - Technology - Amazon Ads             10         6,446,052.00      289,792.00     695,370.76
+camp_002_06_007  Retargeting - Technology - Pinterest               6        16,325,203.00      727,523.00     692,991.72
+camp_002_10_007  Retargeting - Technology - Amazon Ads             10         6,500,884.00      284,132.00     691,074.55
+camp_002_05_019  Retargeting - Technology - Snapchat                5        34,298,674.00    1,448,545.00     689,610.63
+camp_002_06_013  Retargeting - Technology - Pinterest               6        16,736,865.00      691,433.00     689,310.92
+camp_002_05_007  Retargeting - Technology - Snapchat                5        33,584,553.00    1,426,499.00     689,244.91
+camp_002_05_001  Retargeting - Technology - Snapchat                5        35,861,129.00    1,540,517.00     686,254.96
+camp_002_09_001  Retargeting - Technology - Reddit                  9        18,617,461.00      731,131.00     680,473.50
+camp_002_06_001  Retargeting - Technology - Pinterest               6        15,819,932.00      676,998.00     671,514.11
+camp_002_10_013  Retargeting - Technology - Amazon Ads             10         6,733,917.00      285,343.00     649,784.74
+camp_002_06_019  Retargeting - Technology - Pinterest               6        15,795,976.00      674,312.00     582,360.33
 
 ────────────────────────────────────────────────────────────────────────
 [C1] Top 10 ads by total spend
 Category: Sorting & Ranking
-Time: 307.1 ms | Rows: 10
+Time: 133.4 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
 ad_id          ad_name                           channel_id    total_impressions    total_clicks    total_spend    total_conversions
 -------------  ------------------------------  ------------  -------------------  --------------  -------------  -------------------
-ad_001_02_021  Collection - Conversion #22                2           28,015,985       1,220,769   5,673,317.77               53,800
-ad_001_02_027  Static Image - Conversion #28              2           27,964,418       1,250,977   5,525,953.88               57,849
-ad_001_02_019  Static Image - Retargeting #20             2           28,557,461       1,216,451   5,498,164.50               55,202
-ad_001_02_023  Playable - Engagement #24                  2           28,085,544       1,206,522   5,489,586.14               54,273
-ad_001_02_007  Playable - Retargeting #8                  2           29,420,174       1,257,291   5,488,776.83               58,385
-ad_001_02_006  Dynamic - Brand Awareness #7               2           27,974,723       1,191,806   5,423,221.83               53,917
-ad_001_02_022  Dynamic - Prospecting #23                  2           28,676,995       1,218,157   5,414,690.21               55,235
-ad_001_02_013  Collection - Retargeting #14               2           27,082,883       1,237,765   5,412,894.45               54,001
-ad_001_02_018  Carousel - Brand Awareness #19             2           26,366,759       1,173,062   5,401,951.58               52,521
-ad_001_02_001  Video 15s - Retargeting #2                 2           26,987,793       1,196,642   5,363,564.70               52,951
+ad_001_02_021  Collection - Conversion #22                2        28,015,985.00    1,220,769.00   5,673,317.77            53,800.00
+ad_001_02_027  Static Image - Conversion #28              2        27,964,418.00    1,250,977.00   5,525,953.88            57,849.00
+ad_001_02_019  Static Image - Retargeting #20             2        28,557,461.00    1,216,451.00   5,498,164.50            55,202.00
+ad_001_02_023  Playable - Engagement #24                  2        28,085,544.00    1,206,522.00   5,489,586.14            54,273.00
+ad_001_02_007  Playable - Retargeting #8                  2        29,420,174.00    1,257,291.00   5,488,776.83            58,385.00
+ad_001_02_006  Dynamic - Brand Awareness #7               2        27,974,723.00    1,191,806.00   5,423,221.83            53,917.00
+ad_001_02_022  Dynamic - Prospecting #23                  2        28,676,995.00    1,218,157.00   5,414,690.21            55,235.00
+ad_001_02_013  Collection - Retargeting #14               2        27,082,883.00    1,237,765.00   5,412,894.45            54,001.00
+ad_001_02_018  Carousel - Brand Awareness #19             2        26,366,759.00    1,173,062.00   5,401,951.58            52,521.00
+ad_001_02_001  Video 15s - Retargeting #2                 2        26,987,793.00    1,196,642.00   5,363,564.70            52,951.00
 
 ────────────────────────────────────────────────────────────────────────
 [C2] Top campaigns by CTR (computed metric sort)
 Category: Sorting & Ranking
-Time: 182.7 ms | Rows: 10
+Time: 165.9 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
 campaign_id      campaign_name                                      channel_id    total_clicks    total_impressions    ctr_pct
 ---------------  -----------------------------------------------  ------------  --------------  -------------------  ---------
-camp_003_01_012  Brand Awareness - Food & Beverage - Facebook                1       2,590,487           55,442,121       4.67
-camp_003_01_002  Lead Gen - Food & Beverage - Facebook                       1       2,525,534           54,759,132       4.61
-camp_003_10_024  Brand Awareness - Food & Beverage - Amazon Ads             10         677,102           14,901,336       4.54
-camp_003_07_013  Retargeting - Food & Beverage - YouTube                     7       2,102,984           46,334,711       4.54
-camp_003_10_006  Brand Awareness - Food & Beverage - Amazon Ads             10         710,217           15,666,284       4.53
-camp_003_08_012  Brand Awareness - Food & Beverage - X (Twitter)             8       1,488,937           32,893,591       4.53
-camp_003_06_006  Brand Awareness - Food & Beverage - Pinterest               6       1,688,695           37,313,671       4.53
-camp_003_05_002  Lead Gen - Food & Beverage - Snapchat                       5       3,227,375           71,794,651       4.50
-camp_003_05_022  Prospecting - Food & Beverage - Snapchat                    5       3,471,790           77,261,176       4.49
-camp_003_10_012  Brand Awareness - Food & Beverage - Amazon Ads             10         684,753           15,253,464       4.49
+camp_003_01_012  Brand Awareness - Food & Beverage - Facebook                1    2,590,487.00        55,442,121.00       4.67
+camp_003_01_002  Lead Gen - Food & Beverage - Facebook                       1    2,525,534.00        54,759,132.00       4.61
+camp_003_10_024  Brand Awareness - Food & Beverage - Amazon Ads             10      677,102.00        14,901,336.00       4.54
+camp_003_07_013  Retargeting - Food & Beverage - YouTube                     7    2,102,984.00        46,334,711.00       4.54
+camp_003_10_006  Brand Awareness - Food & Beverage - Amazon Ads             10      710,217.00        15,666,284.00       4.53
+camp_003_08_012  Brand Awareness - Food & Beverage - X (Twitter)             8    1,488,937.00        32,893,591.00       4.53
+camp_003_06_006  Brand Awareness - Food & Beverage - Pinterest               6    1,688,695.00        37,313,671.00       4.53
+camp_003_05_002  Lead Gen - Food & Beverage - Snapchat                       5    3,227,375.00        71,794,651.00       4.50
+camp_003_05_022  Prospecting - Food & Beverage - Snapchat                    5    3,471,790.00        77,261,176.00       4.49
+camp_003_10_012  Brand Awareness - Food & Beverage - Amazon Ads             10      684,753.00        15,253,464.00       4.49
 
 ────────────────────────────────────────────────────────────────────────
 [C3] Worst cost-per-conversion (bottom performers)
 Category: Sorting & Ranking
-Time: 174.9 ms | Rows: 10
+Time: 164.2 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
 ad_id          ad_name                            channel_id    total_spend    total_conversions    cost_per_conv
 -------------  -------------------------------  ------------  -------------  -------------------  ---------------
-ad_002_04_026  Carousel - Lead Gen #27                     4   3,668,795.31               13,390           274.00
-ad_002_04_006  Dynamic - Brand Awareness #7                4   3,411,191.45               12,518           272.50
-ad_002_04_010  Carousel - Prospecting #11                  4   3,717,756.20               13,762           270.15
-ad_002_04_020  Story Ad - Lead Gen #21                     4   3,600,642.61               13,586           265.03
-ad_002_04_024  Video 30s - Brand Awareness #25             4   3,225,178.40               12,192           264.53
-ad_002_04_018  Carousel - Brand Awareness #19              4   3,406,407.17               12,965           262.74
-ad_002_04_025  Video 15s - Retargeting #26                 4   3,698,200.49               14,125           261.82
-ad_002_04_017  Video 15s - Engagement #18                  4   3,778,936.99               14,448           261.55
-ad_002_04_022  Dynamic - Prospecting #23                   4   3,825,795.44               14,666           260.86
-ad_002_04_021  Collection - Conversion #22                 4   3,455,079.55               13,354           258.73
+ad_002_04_026  Carousel - Lead Gen #27                     4   3,668,795.31            13,390.00           274.00
+ad_002_04_006  Dynamic - Brand Awareness #7                4   3,411,191.45            12,518.00           272.50
+ad_002_04_010  Carousel - Prospecting #11                  4   3,717,756.20            13,762.00           270.15
+ad_002_04_020  Story Ad - Lead Gen #21                     4   3,600,642.61            13,586.00           265.03
+ad_002_04_024  Video 30s - Brand Awareness #25             4   3,225,178.40            12,192.00           264.53
+ad_002_04_018  Carousel - Brand Awareness #19              4   3,406,407.17            12,965.00           262.74
+ad_002_04_025  Video 15s - Retargeting #26                 4   3,698,200.49            14,125.00           261.82
+ad_002_04_017  Video 15s - Engagement #18                  4   3,778,936.99            14,448.00           261.55
+ad_002_04_022  Dynamic - Prospecting #23                   4   3,825,795.44            14,666.00           260.86
+ad_002_04_021  Collection - Conversion #22                 4   3,455,079.55            13,354.00           258.73
 
 ────────────────────────────────────────────────────────────────────────
 [D1] Daily spend trend (line chart — June 2024)
 Category: Time Series & Widgets
-Time: 162.2 ms | Rows: 30
+Time: 1.6 ms | Rows: 30
 ────────────────────────────────────────────────────────────────────────
 date          daily_impressions    daily_clicks    daily_spend    daily_conversions
 ----------  -------------------  --------------  -------------  -------------------
-2024-06-01            4,050,673         171,771     261,131.69                4,046
-2024-06-02            4,000,821         179,843     235,043.57                5,073
-2024-06-03            3,805,672         154,693     204,450.24                3,740
-2024-06-04            3,898,208         175,616     236,130.73                4,430
-2024-06-05            3,495,629         175,777     227,445.45                4,691
-2024-06-06            4,240,551         177,111     199,786.15                4,146
-2024-06-07            4,069,854         135,493     161,224.26                3,074
-2024-06-08            4,205,676         170,221     181,679.80                3,966
-2024-06-09            3,827,251         165,090     215,264.90                4,083
-2024-06-10            3,266,445         142,125     140,426.38                3,651
-2024-06-11            3,597,969         139,550     143,177.26                3,520
-2024-06-12            3,648,921         166,947     195,297.52                4,331
-2024-06-13            4,252,567         178,948     238,641.44                4,730
-2024-06-14            3,997,321         175,597     209,272.41                4,546
-2024-06-15            3,407,586         147,447     192,131.39                3,772
-2024-06-16            3,811,433         184,867     207,171.76                4,612
-2024-06-17            4,150,494         160,573     207,355.71                4,327
-2024-06-18            3,943,768         162,617     200,597.47                3,585
-2024-06-19            3,908,569         135,915     168,593.24                3,246
-2024-06-20            3,758,890         148,361     165,380.68                3,562
-2024-06-21            3,750,103         163,174     209,415.98                4,112
-2024-06-22            4,473,870         185,313     232,536.01                5,218
-2024-06-23            3,777,459         164,701     193,164.94                3,763
-2024-06-24            3,401,160         142,442     145,659.30                3,471
-2024-06-25            4,014,143         165,776     222,734.07                4,209
-2024-06-26            3,526,854         164,255     182,741.38                4,396
-2024-06-27            4,214,676         195,159     228,048.05                5,159
-2024-06-28            3,541,806         164,633     207,617.39                4,273
-2024-06-29            3,396,490         135,089     152,712.90                3,536
-2024-06-30            3,714,025         150,299     178,975.44                3,617
+2024-06-01         4,050,673.00      171,771.00     261,131.69             4,046.00
+2024-06-02         4,000,821.00      179,843.00     235,043.57             5,073.00
+2024-06-03         3,805,672.00      154,693.00     204,450.24             3,740.00
+2024-06-04         3,898,208.00      175,616.00     236,130.73             4,430.00
+2024-06-05         3,495,629.00      175,777.00     227,445.45             4,691.00
+2024-06-06         4,240,551.00      177,111.00     199,786.15             4,146.00
+2024-06-07         4,069,854.00      135,493.00     161,224.26             3,074.00
+2024-06-08         4,205,676.00      170,221.00     181,679.80             3,966.00
+2024-06-09         3,827,251.00      165,090.00     215,264.90             4,083.00
+2024-06-10         3,266,445.00      142,125.00     140,426.38             3,651.00
+2024-06-11         3,597,969.00      139,550.00     143,177.26             3,520.00
+2024-06-12         3,648,921.00      166,947.00     195,297.52             4,331.00
+2024-06-13         4,252,567.00      178,948.00     238,641.44             4,730.00
+2024-06-14         3,997,321.00      175,597.00     209,272.41             4,546.00
+2024-06-15         3,407,586.00      147,447.00     192,131.39             3,772.00
+2024-06-16         3,811,433.00      184,867.00     207,171.76             4,612.00
+2024-06-17         4,150,494.00      160,573.00     207,355.71             4,327.00
+2024-06-18         3,943,768.00      162,617.00     200,597.47             3,585.00
+2024-06-19         3,908,569.00      135,915.00     168,593.24             3,246.00
+2024-06-20         3,758,890.00      148,361.00     165,380.68             3,562.00
+2024-06-21         3,750,103.00      163,174.00     209,415.98             4,112.00
+2024-06-22         4,473,870.00      185,313.00     232,536.01             5,218.00
+2024-06-23         3,777,459.00      164,701.00     193,164.94             3,763.00
+2024-06-24         3,401,160.00      142,442.00     145,659.30             3,471.00
+2024-06-25         4,014,143.00      165,776.00     222,734.07             4,209.00
+2024-06-26         3,526,854.00      164,255.00     182,741.38             4,396.00
+2024-06-27         4,214,676.00      195,159.00     228,048.05             5,159.00
+2024-06-28         3,541,806.00      164,633.00     207,617.39             4,273.00
+2024-06-29         3,396,490.00      135,089.00     152,712.90             3,536.00
+2024-06-30         3,714,025.00      150,299.00     178,975.44             3,617.00
 
 ────────────────────────────────────────────────────────────────────────
 [D2] Monthly rollup by channel (bar chart — full year)
 Category: Time Series & Widgets
-Time: 188.8 ms | Rows: 120
+Time: 128.9 ms | Rows: 120
 ────────────────────────────────────────────────────────────────────────
   month    channel_id    monthly_impressions    monthly_clicks    monthly_spend    monthly_conversions
 -------  ------------  ---------------------  ----------------  ---------------  ---------------------
-      1             1            105,334,133         4,403,863     4,905,312.33                110,140
-      1             2             52,677,663         2,269,767     7,648,344.06                100,871
-      1             3            172,006,172         7,241,269     4,417,472.95                 71,396
-      1             4             17,087,667           722,890     4,910,995.09                 25,035
-      1             5            138,271,509         5,837,717     2,463,593.12                 47,045
-      1             6             67,939,247         2,819,753     2,379,786.35                 84,521
-      1             7             87,476,002         3,658,445     4,473,023.37                 54,711
-      1             8             63,418,725         2,700,201     3,903,884.71                 32,106
-      1             9             80,446,973         3,418,877     2,887,922.35                 67,294
-      1            10             27,958,612         1,190,495     2,481,970.52                 66,063
-      2             1            103,855,732         4,548,891     5,081,955.53                115,577
-      2             2             52,679,874         2,229,887     7,994,304.80                 99,362
-      2             3            169,071,851         7,070,878     4,534,346.30                 72,045
-      2             4             17,576,621           752,765     5,536,831.49                 25,771
-      2             5            139,468,343         5,904,954     2,627,333.03                 46,788
-      2             6             68,363,243         2,903,900     2,630,007.52                 85,556
-      2             7             88,257,269         3,796,153     4,692,059.73                 56,923
-      2             8             61,801,494         2,634,737     3,977,230.83                 31,286
-      2             9             74,708,374         3,116,421     2,833,990.60                 61,497
-      2            10             27,946,735         1,198,060     2,644,641.26                 65,739
-      3             1            126,635,309         5,570,448     7,057,642.80                135,929
-      3             2             61,873,822         2,647,584    10,627,571.35                118,063
-      3             3            207,915,031         8,829,225     6,414,038.67                 87,314
-      3             4             20,930,389           886,428     7,123,739.06                 30,421
-      3             5            166,716,166         7,135,322     3,564,296.43                 56,131
-      3             6             84,006,482         3,618,378     3,602,073.64                108,059
-      3             7            104,568,188         4,460,385     6,409,675.12                 66,612
-      3             8             72,218,287         2,984,710     5,044,998.05                 35,434
-      3             9             91,517,367         3,965,696     4,049,912.67                 78,251
-      3            10             32,605,623         1,362,893     3,489,560.65                 74,153
-      4             1            126,686,600         5,539,127     7,402,645.46                140,842
-      4             2             62,129,598         2,642,906    11,317,227.17                116,188
-      4             3            212,362,365         9,269,927     7,269,696.65                 91,874
-      4             4             21,123,672           914,533     7,879,821.74                 31,727
-      4             5            171,416,729         7,278,352     3,703,472.64                 58,740
-      4             6             88,044,894         3,758,398     3,805,730.11                111,992
-      4             7            105,660,331         4,562,705     7,049,214.82                 67,592
-      4             8             76,012,385         3,182,816     5,925,682.16                 38,214
-      4             9             91,916,037         3,939,931     4,108,931.56                 79,634
-      4            10             33,601,206         1,441,226     3,832,907.53                 77,905
-      5             1            131,828,641         5,677,014     7,601,811.13                142,724
-      5             2             63,567,549         2,632,867    11,268,259.11                119,669
-      5             3            220,402,860         9,386,061     7,182,349.24                 92,428
-      5             4             23,399,688           985,273     8,461,483.28                 34,168
-      5             5            176,257,030         7,560,941     3,933,935.11                 60,114
-      5             6             86,930,643         3,682,609     3,749,479.56                111,340
-      5             7            113,775,734         4,892,731     7,474,495.16                 74,011
-      5             8             78,385,726         3,324,526     6,032,268.29                 38,984
-      5             9             96,533,807         4,149,686     4,243,010.57                 80,128
-      5            10             34,636,830         1,443,042     3,968,096.85                 79,658
-      6             1            115,148,884         4,879,403     5,943,807.51                122,885
-      6             2             55,638,745         2,349,261     9,260,086.37                101,907
-      6             3            193,353,295         8,342,635     5,921,650.11                 82,735
-      6             4             18,955,211           811,003     6,248,858.22                 27,817
-      6             5            146,378,126         6,126,589     2,878,432.38                 48,726
-      6             6             75,035,565         3,343,539     3,105,683.96                 98,269
-      6             7             91,130,828         3,995,299     5,603,248.51                 60,183
-      6             8             66,119,829         2,850,151     4,656,695.18                 34,500
-      6             9             82,067,038         3,512,032     3,221,255.97                 69,136
-      6            10             30,363,810         1,331,838     3,082,775.21                 74,161
-      7             1            112,913,989         4,770,938     5,406,659.63                121,954
-      7             2             55,351,351         2,348,957     8,374,627.41                105,337
-      7             3            177,075,846         7,571,645     4,907,164.32                 75,891
-      7             4             18,643,106           802,571     5,740,830.17                 27,687
-      7             5            143,127,735         6,114,351     2,527,763.17                 48,263
-      7             6             72,507,463         3,136,499     2,804,486.53                 93,944
-      7             7             92,768,631         3,814,234     5,077,913.39                 56,523
-      7             8             65,308,320         2,768,575     4,343,885.79                 33,383
-      7             9             80,915,317         3,400,340     2,948,307.21                 67,723
-      7            10             28,875,751         1,226,191     2,830,615.40                 66,902
-      8             1            121,513,539         4,974,426     6,024,658.69                121,574
-      8             2             60,241,336         2,410,892     9,259,502.32                107,853
-      8             3            189,946,231         7,902,106     5,630,234.57                 80,106
-      8             4             20,208,752           856,508     6,559,057.49                 30,166
-      8             5            158,148,133         6,560,695     3,048,103.28                 52,979
-      8             6             79,449,486         3,324,652     3,237,451.98                 96,322
-      8             7             96,932,822         3,929,103     5,326,409.79                 58,597
-      8             8             73,165,167         3,099,658     5,026,733.74                 36,278
-      8             9             84,014,944         3,699,195     3,554,886.89                 73,665
-      8            10             31,529,928         1,327,899     3,133,201.50                 73,106
-      9             1            134,669,494         5,833,353     8,033,276.40                144,620
-      9             2             66,342,510         2,839,177    12,590,522.79                130,767
-      9             3            220,751,684         9,288,706     7,598,742.25                 93,585
-      9             4             21,986,375           922,194     8,040,698.08                 31,912
-      9             5            175,432,186         7,389,367     4,284,525.87                 58,849
-      9             6             86,633,119         3,802,637     4,180,476.91                113,359
-      9             7            112,248,154         4,783,600     7,580,271.23                 72,464
-      9             8             82,094,787         3,496,524     6,665,643.58                 41,979
-      9             9             98,031,209         3,971,128     4,326,563.14                 79,434
-      9            10             34,832,447         1,479,668     4,183,598.88                 82,393
-     10             1            153,031,893         6,661,639    10,681,410.91                168,324
-     10             2             75,385,186         3,271,279    16,260,775.80                144,243
-     10             3            250,839,603        10,581,483     9,305,295.74                104,957
-     10             4             25,038,036         1,036,074    10,035,428.73                 35,112
-     10             5            195,851,360         8,551,069     5,257,235.58                 69,032
-     10             6            100,578,337         4,343,974     5,402,783.95                130,394
-     10             7            124,090,818         5,199,287     9,175,952.96                 77,419
-     10             8             90,994,434         3,798,399     8,052,214.01                 45,593
-     10             9            109,014,692         4,598,234     5,596,808.74                 90,042
-     10            10             40,232,254         1,692,804     5,153,394.42                 89,199
-     11             1            180,637,865         8,087,585    15,219,391.33                204,468
-     11             2             87,489,587         3,694,704    20,560,863.97                163,333
-     11             3            286,820,585        12,624,827    13,851,707.79                125,644
-     11             4             29,317,819         1,238,457    14,775,570.57                 42,888
-     11             5            237,147,261        10,153,295     7,263,486.79                 82,375
-     11             6            120,201,476         5,041,618     7,417,976.10                147,825
-     11             7            144,202,889         6,164,936    13,731,688.01                 90,630
-     11             8            103,932,360         4,303,641    10,377,973.94                 50,593
-     11             9            125,555,895         5,389,112     7,771,818.51                106,070
-     11            10             47,051,600         1,916,966     6,988,137.47                107,146
-     12             1            166,269,638         7,069,230    12,077,420.86                176,048
-     12             2             84,741,313         3,705,127    20,543,731.71                165,957
-     12             3            272,394,017        11,391,730    11,684,989.50                113,491
-     12             4             28,591,759         1,212,574    13,185,835.00                 41,928
-     12             5            227,852,085         9,488,152     6,192,855.51                 76,185
-     12             6            113,342,878         4,588,502     6,112,103.68                136,390
-     12             7            137,820,620         5,733,978    11,388,223.43                 85,227
-     12             8            101,860,832         4,342,691    10,405,747.03                 51,199
-     12             9            124,881,725         5,381,292     7,409,267.15                104,441
-     12            10             43,608,042         1,803,656     6,136,936.47                100,105
+      1             1         105,334,133.00      4,403,863.00     4,905,312.33             110,140.00
+      1             2          52,677,663.00      2,269,767.00     7,648,344.06             100,871.00
+      1             3         172,006,172.00      7,241,269.00     4,417,472.95              71,396.00
+      1             4          17,087,667.00        722,890.00     4,910,995.09              25,035.00
+      1             5         138,271,509.00      5,837,717.00     2,463,593.12              47,045.00
+      1             6          67,939,247.00      2,819,753.00     2,379,786.35              84,521.00
+      1             7          87,476,002.00      3,658,445.00     4,473,023.37              54,711.00
+      1             8          63,418,725.00      2,700,201.00     3,903,884.71              32,106.00
+      1             9          80,446,973.00      3,418,877.00     2,887,922.35              67,294.00
+      1            10          27,958,612.00      1,190,495.00     2,481,970.52              66,063.00
+      2             1         103,855,732.00      4,548,891.00     5,081,955.53             115,577.00
+      2             2          52,679,874.00      2,229,887.00     7,994,304.80              99,362.00
+      2             3         169,071,851.00      7,070,878.00     4,534,346.30              72,045.00
+      2             4          17,576,621.00        752,765.00     5,536,831.49              25,771.00
+      2             5         139,468,343.00      5,904,954.00     2,627,333.03              46,788.00
+      2             6          68,363,243.00      2,903,900.00     2,630,007.52              85,556.00
+      2             7          88,257,269.00      3,796,153.00     4,692,059.73              56,923.00
+      2             8          61,801,494.00      2,634,737.00     3,977,230.83              31,286.00
+      2             9          74,708,374.00      3,116,421.00     2,833,990.60              61,497.00
+      2            10          27,946,735.00      1,198,060.00     2,644,641.26              65,739.00
+      3             1         126,635,309.00      5,570,448.00     7,057,642.80             135,929.00
+      3             2          61,873,822.00      2,647,584.00    10,627,571.35             118,063.00
+      3             3         207,915,031.00      8,829,225.00     6,414,038.67              87,314.00
+      3             4          20,930,389.00        886,428.00     7,123,739.06              30,421.00
+      3             5         166,716,166.00      7,135,322.00     3,564,296.43              56,131.00
+      3             6          84,006,482.00      3,618,378.00     3,602,073.64             108,059.00
+      3             7         104,568,188.00      4,460,385.00     6,409,675.12              66,612.00
+      3             8          72,218,287.00      2,984,710.00     5,044,998.05              35,434.00
+      3             9          91,517,367.00      3,965,696.00     4,049,912.67              78,251.00
+      3            10          32,605,623.00      1,362,893.00     3,489,560.65              74,153.00
+      4             1         126,686,600.00      5,539,127.00     7,402,645.46             140,842.00
+      4             2          62,129,598.00      2,642,906.00    11,317,227.17             116,188.00
+      4             3         212,362,365.00      9,269,927.00     7,269,696.65              91,874.00
+      4             4          21,123,672.00        914,533.00     7,879,821.74              31,727.00
+      4             5         171,416,729.00      7,278,352.00     3,703,472.64              58,740.00
+      4             6          88,044,894.00      3,758,398.00     3,805,730.11             111,992.00
+      4             7         105,660,331.00      4,562,705.00     7,049,214.82              67,592.00
+      4             8          76,012,385.00      3,182,816.00     5,925,682.16              38,214.00
+      4             9          91,916,037.00      3,939,931.00     4,108,931.56              79,634.00
+      4            10          33,601,206.00      1,441,226.00     3,832,907.53              77,905.00
+      5             1         131,828,641.00      5,677,014.00     7,601,811.13             142,724.00
+      5             2          63,567,549.00      2,632,867.00    11,268,259.11             119,669.00
+      5             3         220,402,860.00      9,386,061.00     7,182,349.24              92,428.00
+      5             4          23,399,688.00        985,273.00     8,461,483.28              34,168.00
+      5             5         176,257,030.00      7,560,941.00     3,933,935.11              60,114.00
+      5             6          86,930,643.00      3,682,609.00     3,749,479.56             111,340.00
+      5             7         113,775,734.00      4,892,731.00     7,474,495.16              74,011.00
+      5             8          78,385,726.00      3,324,526.00     6,032,268.29              38,984.00
+      5             9          96,533,807.00      4,149,686.00     4,243,010.57              80,128.00
+      5            10          34,636,830.00      1,443,042.00     3,968,096.85              79,658.00
+      6             1         115,148,884.00      4,879,403.00     5,943,807.51             122,885.00
+      6             2          55,638,745.00      2,349,261.00     9,260,086.37             101,907.00
+      6             3         193,353,295.00      8,342,635.00     5,921,650.11              82,735.00
+      6             4          18,955,211.00        811,003.00     6,248,858.22              27,817.00
+      6             5         146,378,126.00      6,126,589.00     2,878,432.38              48,726.00
+      6             6          75,035,565.00      3,343,539.00     3,105,683.96              98,269.00
+      6             7          91,130,828.00      3,995,299.00     5,603,248.51              60,183.00
+      6             8          66,119,829.00      2,850,151.00     4,656,695.18              34,500.00
+      6             9          82,067,038.00      3,512,032.00     3,221,255.97              69,136.00
+      6            10          30,363,810.00      1,331,838.00     3,082,775.21              74,161.00
+      7             1         112,913,989.00      4,770,938.00     5,406,659.63             121,954.00
+      7             2          55,351,351.00      2,348,957.00     8,374,627.41             105,337.00
+      7             3         177,075,846.00      7,571,645.00     4,907,164.32              75,891.00
+      7             4          18,643,106.00        802,571.00     5,740,830.17              27,687.00
+      7             5         143,127,735.00      6,114,351.00     2,527,763.17              48,263.00
+      7             6          72,507,463.00      3,136,499.00     2,804,486.53              93,944.00
+      7             7          92,768,631.00      3,814,234.00     5,077,913.39              56,523.00
+      7             8          65,308,320.00      2,768,575.00     4,343,885.79              33,383.00
+      7             9          80,915,317.00      3,400,340.00     2,948,307.21              67,723.00
+      7            10          28,875,751.00      1,226,191.00     2,830,615.40              66,902.00
+      8             1         121,513,539.00      4,974,426.00     6,024,658.69             121,574.00
+      8             2          60,241,336.00      2,410,892.00     9,259,502.32             107,853.00
+      8             3         189,946,231.00      7,902,106.00     5,630,234.57              80,106.00
+      8             4          20,208,752.00        856,508.00     6,559,057.49              30,166.00
+      8             5         158,148,133.00      6,560,695.00     3,048,103.28              52,979.00
+      8             6          79,449,486.00      3,324,652.00     3,237,451.98              96,322.00
+      8             7          96,932,822.00      3,929,103.00     5,326,409.79              58,597.00
+      8             8          73,165,167.00      3,099,658.00     5,026,733.74              36,278.00
+      8             9          84,014,944.00      3,699,195.00     3,554,886.89              73,665.00
+      8            10          31,529,928.00      1,327,899.00     3,133,201.50              73,106.00
+      9             1         134,669,494.00      5,833,353.00     8,033,276.40             144,620.00
+      9             2          66,342,510.00      2,839,177.00    12,590,522.79             130,767.00
+      9             3         220,751,684.00      9,288,706.00     7,598,742.25              93,585.00
+      9             4          21,986,375.00        922,194.00     8,040,698.08              31,912.00
+      9             5         175,432,186.00      7,389,367.00     4,284,525.87              58,849.00
+      9             6          86,633,119.00      3,802,637.00     4,180,476.91             113,359.00
+      9             7         112,248,154.00      4,783,600.00     7,580,271.23              72,464.00
+      9             8          82,094,787.00      3,496,524.00     6,665,643.58              41,979.00
+      9             9          98,031,209.00      3,971,128.00     4,326,563.14              79,434.00
+      9            10          34,832,447.00      1,479,668.00     4,183,598.88              82,393.00
+     10             1         153,031,893.00      6,661,639.00    10,681,410.91             168,324.00
+     10             2          75,385,186.00      3,271,279.00    16,260,775.80             144,243.00
+     10             3         250,839,603.00     10,581,483.00     9,305,295.74             104,957.00
+     10             4          25,038,036.00      1,036,074.00    10,035,428.73              35,112.00
+     10             5         195,851,360.00      8,551,069.00     5,257,235.58              69,032.00
+     10             6         100,578,337.00      4,343,974.00     5,402,783.95             130,394.00
+     10             7         124,090,818.00      5,199,287.00     9,175,952.96              77,419.00
+     10             8          90,994,434.00      3,798,399.00     8,052,214.01              45,593.00
+     10             9         109,014,692.00      4,598,234.00     5,596,808.74              90,042.00
+     10            10          40,232,254.00      1,692,804.00     5,153,394.42              89,199.00
+     11             1         180,637,865.00      8,087,585.00    15,219,391.33             204,468.00
+     11             2          87,489,587.00      3,694,704.00    20,560,863.97             163,333.00
+     11             3         286,820,585.00     12,624,827.00    13,851,707.79             125,644.00
+     11             4          29,317,819.00      1,238,457.00    14,775,570.57              42,888.00
+     11             5         237,147,261.00     10,153,295.00     7,263,486.79              82,375.00
+     11             6         120,201,476.00      5,041,618.00     7,417,976.10             147,825.00
+     11             7         144,202,889.00      6,164,936.00    13,731,688.01              90,630.00
+     11             8         103,932,360.00      4,303,641.00    10,377,973.94              50,593.00
+     11             9         125,555,895.00      5,389,112.00     7,771,818.51             106,070.00
+     11            10          47,051,600.00      1,916,966.00     6,988,137.47             107,146.00
+     12             1         166,269,638.00      7,069,230.00    12,077,420.86             176,048.00
+     12             2          84,741,313.00      3,705,127.00    20,543,731.71             165,957.00
+     12             3         272,394,017.00     11,391,730.00    11,684,989.50             113,491.00
+     12             4          28,591,759.00      1,212,574.00    13,185,835.00              41,928.00
+     12             5         227,852,085.00      9,488,152.00     6,192,855.51              76,185.00
+     12             6         113,342,878.00      4,588,502.00     6,112,103.68             136,390.00
+     12             7         137,820,620.00      5,733,978.00    11,388,223.43              85,227.00
+     12             8         101,860,832.00      4,342,691.00    10,405,747.03              51,199.00
+     12             9         124,881,725.00      5,381,292.00     7,409,267.15             104,441.00
+     12            10          43,608,042.00      1,803,656.00     6,136,936.47             100,105.00
 
 ────────────────────────────────────────────────────────────────────────
 [D3] Channel spend distribution % (pie chart)
 Category: Time Series & Widgets
-Time: 378.3 ms | Rows: 10
+Time: 154.6 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
   channel_id    channel_spend    pct_of_total
 ------------  ---------------  --------------
@@ -875,85 +875,85 @@ Time: 378.3 ms | Rows: 10
 ────────────────────────────────────────────────────────────────────────
 [E1] Channel-only filter: monthly rollup across all clients
 Category: Partition & Columnar Proof
-Time: 256.8 ms | Rows: 12
+Time: 13,277.5 ms | Rows: 12
 ────────────────────────────────────────────────────────────────────────
   month    row_count    total_impressions    total_clicks       total_spend    total_conversions
 -------  -----------  -------------------  --------------  ----------------  -------------------
-      1       86,800        5,216,269,977     221,658,033    754,348,449.35            9,914,174
-      2       81,200        5,170,897,752     219,425,375    792,594,203.77            9,820,267
-      3       86,800        6,190,002,594     263,168,401  1,064,846,470.75           11,818,198
-      4       84,000        6,304,348,072     268,591,712  1,144,064,635.71           12,038,644
-      5       86,800        6,506,699,549     277,591,941  1,181,752,499.46           12,430,423
-      6       84,000        5,693,912,099     242,798,538    926,960,207.37           10,895,106
-      7       86,800        5,533,109,811     235,035,418    850,270,806.83           10,545,162
-      8       86,800        5,875,667,416     249,349,059    954,817,317.96           11,159,019
-      9       84,000        6,622,137,997     280,591,423  1,254,973,051.29           12,630,477
-     10       86,800        7,470,009,907     317,776,309  1,555,769,502.08           14,263,032
-     11       84,000        8,887,086,243     377,548,889  2,242,216,730.17           16,944,867
-     12       86,800        8,462,240,868     358,713,980  1,984,118,941.09           16,131,480
+      1       86,800     5,216,269,977.00  221,658,033.00    754,348,449.35         9,914,174.00
+      2       81,200     5,170,897,752.00  219,425,375.00    792,594,203.77         9,820,267.00
+      3       86,800     6,190,002,594.00  263,168,401.00  1,064,846,470.75        11,818,198.00
+      4       84,000     6,304,348,072.00  268,591,712.00  1,144,064,635.71        12,038,644.00
+      5       86,800     6,506,699,549.00  277,591,941.00  1,181,752,499.46        12,430,423.00
+      6       84,000     5,693,912,099.00  242,798,538.00    926,960,207.37        10,895,106.00
+      7       86,800     5,533,109,811.00  235,035,418.00    850,270,806.83        10,545,162.00
+      8       86,800     5,875,667,416.00  249,349,059.00    954,817,317.96        11,159,019.00
+      9       84,000     6,622,137,997.00  280,591,423.00  1,254,973,051.29        12,630,477.00
+     10       86,800     7,470,009,907.00  317,776,309.00  1,555,769,502.08        14,263,032.00
+     11       84,000     8,887,086,243.00  377,548,889.00  2,242,216,730.17        16,944,867.00
+     12       86,800     8,462,240,868.00  358,713,980.00  1,984,118,941.09        16,131,480.00
 
 ────────────────────────────────────────────────────────────────────────
 [E2] Ad-level rollup + computed CTR & CPA (single client)
 Category: Partition & Columnar Proof
-Time: 197.7 ms | Rows: 50
+Time: 169.7 ms | Rows: 50
 ────────────────────────────────────────────────────────────────────────
 ad_id          ad_name                            channel_id    total_impressions    total_clicks    total_spend    total_conversions    ctr_pct    cost_per_conv
 -------------  -------------------------------  ------------  -------------------  --------------  -------------  -------------------  ---------  ---------------
-ad_001_02_021  Collection - Conversion #22                 2           28,015,985       1,220,769   5,673,317.77               53,800       4.36           105.45
-ad_001_02_027  Static Image - Conversion #28               2           27,964,418       1,250,977   5,525,953.88               57,849       4.47            95.52
-ad_001_02_019  Static Image - Retargeting #20              2           28,557,461       1,216,451   5,498,164.50               55,202       4.26            99.60
-ad_001_02_023  Playable - Engagement #24                   2           28,085,544       1,206,522   5,489,586.14               54,273       4.30           101.15
-ad_001_02_007  Playable - Retargeting #8                   2           29,420,174       1,257,291   5,488,776.83               58,385       4.27            94.01
-ad_001_02_006  Dynamic - Brand Awareness #7                2           27,974,723       1,191,806   5,423,221.83               53,917       4.26           100.58
-ad_001_02_022  Dynamic - Prospecting #23                   2           28,676,995       1,218,157   5,414,690.21               55,235       4.25            98.03
-ad_001_02_013  Collection - Retargeting #14                2           27,082,883       1,237,765   5,412,894.45               54,001       4.57           100.24
-ad_001_02_018  Carousel - Brand Awareness #19              2           26,366,759       1,173,062   5,401,951.58               52,521       4.45           102.85
-ad_001_02_001  Video 15s - Retargeting #2                  2           26,987,793       1,196,642   5,363,564.70               52,951       4.43           101.29
-ad_001_02_002  Carousel - Lead Gen #3                      2           29,935,853       1,257,709   5,353,824.36               54,769       4.20            97.75
-ad_001_02_011  Static Image - Engagement #12               2           27,470,853       1,194,623   5,322,189.42               51,763       4.35           102.82
-ad_001_02_016  Video 30s - Prospecting #17                 2           27,726,666       1,193,189   5,266,871.19               53,466       4.30            98.51
-ad_001_02_010  Carousel - Prospecting #11                  2           28,304,163       1,183,323   5,260,480.57               53,663       4.18            98.03
-ad_001_02_015  Playable - Conversion #16                   2           28,347,497       1,200,026   5,252,519.65               55,221       4.23            95.12
-ad_001_02_020  Story Ad - Lead Gen #21                     2           27,347,948       1,160,295   5,220,404.66               51,376       4.24           101.61
-ad_001_02_004  Story Ad - Prospecting #5                   2           26,272,656       1,125,165   5,119,755.80               51,806       4.28            98.83
-ad_001_02_014  Dynamic - Lead Gen #15                      2           27,555,941       1,119,121   5,031,451.77               48,953       4.06           102.78
-ad_001_02_000  Video 30s - Brand Awareness #1              2           26,885,253       1,138,771   5,025,239.78               51,616       4.24            97.36
-ad_001_02_026  Carousel - Lead Gen #27                     2           27,689,113       1,206,277   5,018,374.03               52,553       4.36            95.49
-ad_001_02_008  Video 30s - Lead Gen #9                     2           27,610,765       1,142,640   4,990,918.98               49,898       4.14           100.02
-ad_001_02_003  Static Image - Conversion #4                2           27,380,110       1,106,335   4,968,425.77               46,264       4.04           107.39
-ad_001_02_012  Story Ad - Brand Awareness #13              2           28,213,042       1,142,201   4,954,299.89               50,156       4.05            98.78
-ad_001_02_025  Video 15s - Retargeting #26                 2           28,510,863       1,123,248   4,899,042.65               50,719       3.94            96.59
-ad_001_02_009  Video 15s - Conversion #10                  2           26,601,411       1,096,111   4,863,583.13               49,596       4.12            98.06
-ad_001_02_017  Video 15s - Engagement #18                  2           28,917,505       1,180,909   4,850,697.45               52,902       4.08            91.69
-ad_001_02_024  Video 30s - Brand Awareness #25             2           26,533,144       1,136,154   4,822,040.80               49,116       4.28            98.18
-ad_001_02_005  Collection - Engagement #6                  2           27,683,016       1,166,869   4,793,575.07               51,579       4.22            92.94
-ad_001_01_027  Static Image - Conversion #28               1           58,155,962       2,520,939   3,787,707.31               62,906       4.33            60.21
-ad_001_04_006  Dynamic - Brand Awareness #7                4            9,654,300         434,016   3,775,033.08               14,850       4.50           254.21
-ad_001_04_018  Carousel - Brand Awareness #19              4            9,688,619         419,350   3,737,417.63               14,593       4.33           256.11
-ad_001_04_027  Static Image - Conversion #28               4            9,700,456         403,015   3,731,197.51               14,065       4.15           265.28
-ad_001_04_020  Story Ad - Lead Gen #21                     4            9,543,745         406,406   3,719,712.81               13,647       4.26           272.57
-ad_001_01_013  Collection - Retargeting #14                1           58,529,933       2,421,823   3,716,046.70               61,389       4.14            60.53
-ad_001_04_011  Static Image - Engagement #12               4            9,390,420         408,109   3,665,238.09               13,833       4.35           264.96
-ad_001_04_024  Video 30s - Brand Awareness #25             4            9,327,870         411,724   3,658,827.00               14,718       4.41           248.60
-ad_001_04_004  Story Ad - Prospecting #5                   4            9,672,925         414,654   3,655,183.31               13,833       4.29           264.24
-ad_001_04_008  Video 30s - Lead Gen #9                     4            9,714,579         411,123   3,607,043.97               14,177       4.23           254.43
-ad_001_01_000  Video 30s - Brand Awareness #1              1           56,781,286       2,518,059   3,589,167.00               63,694       4.43            56.35
-ad_001_04_025  Video 15s - Retargeting #26                 4            9,530,241         404,904   3,589,166.28               13,613       4.25           263.66
-ad_001_04_021  Collection - Conversion #22                 4            9,617,749         402,152   3,585,398.26               14,263       4.18           251.38
-ad_001_01_020  Story Ad - Lead Gen #21                     1           57,486,077       2,473,731   3,567,900.09               62,433       4.30            57.15
-ad_001_04_009  Video 15s - Conversion #10                  4            9,109,588         396,623   3,560,148.65               13,198       4.35           269.75
-ad_001_04_001  Video 15s - Retargeting #2                  4            9,595,006         393,311   3,551,000.98               13,513       4.10           262.78
-ad_001_04_003  Static Image - Conversion #4                4            9,273,916         388,946   3,542,279.58               13,670       4.19           259.13
-ad_001_04_014  Dynamic - Lead Gen #15                      4            9,462,738         423,534   3,541,584.96               14,383       4.48           246.23
-ad_001_01_003  Static Image - Conversion #4                1           57,660,164       2,557,591   3,536,172.67               63,611       4.44            55.59
-ad_001_04_013  Collection - Retargeting #14                4            9,256,361         405,129   3,529,692.48               13,747       4.38           256.76
-ad_001_01_018  Carousel - Brand Awareness #19              1           56,014,072       2,510,892   3,524,591.25               62,813       4.48            56.11
-ad_001_01_024  Video 30s - Brand Awareness #25             1           60,046,539       2,559,898   3,520,043.32               65,061       4.26            54.10
+ad_001_02_021  Collection - Conversion #22                 2        28,015,985.00    1,220,769.00   5,673,317.77            53,800.00       4.36           105.45
+ad_001_02_027  Static Image - Conversion #28               2        27,964,418.00    1,250,977.00   5,525,953.88            57,849.00       4.47            95.52
+ad_001_02_019  Static Image - Retargeting #20              2        28,557,461.00    1,216,451.00   5,498,164.50            55,202.00       4.26            99.60
+ad_001_02_023  Playable - Engagement #24                   2        28,085,544.00    1,206,522.00   5,489,586.14            54,273.00       4.30           101.15
+ad_001_02_007  Playable - Retargeting #8                   2        29,420,174.00    1,257,291.00   5,488,776.83            58,385.00       4.27            94.01
+ad_001_02_006  Dynamic - Brand Awareness #7                2        27,974,723.00    1,191,806.00   5,423,221.83            53,917.00       4.26           100.58
+ad_001_02_022  Dynamic - Prospecting #23                   2        28,676,995.00    1,218,157.00   5,414,690.21            55,235.00       4.25            98.03
+ad_001_02_013  Collection - Retargeting #14                2        27,082,883.00    1,237,765.00   5,412,894.45            54,001.00       4.57           100.24
+ad_001_02_018  Carousel - Brand Awareness #19              2        26,366,759.00    1,173,062.00   5,401,951.58            52,521.00       4.45           102.85
+ad_001_02_001  Video 15s - Retargeting #2                  2        26,987,793.00    1,196,642.00   5,363,564.70            52,951.00       4.43           101.29
+ad_001_02_002  Carousel - Lead Gen #3                      2        29,935,853.00    1,257,709.00   5,353,824.36            54,769.00       4.20            97.75
+ad_001_02_011  Static Image - Engagement #12               2        27,470,853.00    1,194,623.00   5,322,189.42            51,763.00       4.35           102.82
+ad_001_02_016  Video 30s - Prospecting #17                 2        27,726,666.00    1,193,189.00   5,266,871.19            53,466.00       4.30            98.51
+ad_001_02_010  Carousel - Prospecting #11                  2        28,304,163.00    1,183,323.00   5,260,480.57            53,663.00       4.18            98.03
+ad_001_02_015  Playable - Conversion #16                   2        28,347,497.00    1,200,026.00   5,252,519.65            55,221.00       4.23            95.12
+ad_001_02_020  Story Ad - Lead Gen #21                     2        27,347,948.00    1,160,295.00   5,220,404.66            51,376.00       4.24           101.61
+ad_001_02_004  Story Ad - Prospecting #5                   2        26,272,656.00    1,125,165.00   5,119,755.80            51,806.00       4.28            98.83
+ad_001_02_014  Dynamic - Lead Gen #15                      2        27,555,941.00    1,119,121.00   5,031,451.77            48,953.00       4.06           102.78
+ad_001_02_000  Video 30s - Brand Awareness #1              2        26,885,253.00    1,138,771.00   5,025,239.78            51,616.00       4.24            97.36
+ad_001_02_026  Carousel - Lead Gen #27                     2        27,689,113.00    1,206,277.00   5,018,374.03            52,553.00       4.36            95.49
+ad_001_02_008  Video 30s - Lead Gen #9                     2        27,610,765.00    1,142,640.00   4,990,918.98            49,898.00       4.14           100.02
+ad_001_02_003  Static Image - Conversion #4                2        27,380,110.00    1,106,335.00   4,968,425.77            46,264.00       4.04           107.39
+ad_001_02_012  Story Ad - Brand Awareness #13              2        28,213,042.00    1,142,201.00   4,954,299.89            50,156.00       4.05            98.78
+ad_001_02_025  Video 15s - Retargeting #26                 2        28,510,863.00    1,123,248.00   4,899,042.65            50,719.00       3.94            96.59
+ad_001_02_009  Video 15s - Conversion #10                  2        26,601,411.00    1,096,111.00   4,863,583.13            49,596.00       4.12            98.06
+ad_001_02_017  Video 15s - Engagement #18                  2        28,917,505.00    1,180,909.00   4,850,697.45            52,902.00       4.08            91.69
+ad_001_02_024  Video 30s - Brand Awareness #25             2        26,533,144.00    1,136,154.00   4,822,040.80            49,116.00       4.28            98.18
+ad_001_02_005  Collection - Engagement #6                  2        27,683,016.00    1,166,869.00   4,793,575.07            51,579.00       4.22            92.94
+ad_001_01_027  Static Image - Conversion #28               1        58,155,962.00    2,520,939.00   3,787,707.31            62,906.00       4.33            60.21
+ad_001_04_006  Dynamic - Brand Awareness #7                4         9,654,300.00      434,016.00   3,775,033.08            14,850.00       4.50           254.21
+ad_001_04_018  Carousel - Brand Awareness #19              4         9,688,619.00      419,350.00   3,737,417.63            14,593.00       4.33           256.11
+ad_001_04_027  Static Image - Conversion #28               4         9,700,456.00      403,015.00   3,731,197.51            14,065.00       4.15           265.28
+ad_001_04_020  Story Ad - Lead Gen #21                     4         9,543,745.00      406,406.00   3,719,712.81            13,647.00       4.26           272.57
+ad_001_01_013  Collection - Retargeting #14                1        58,529,933.00    2,421,823.00   3,716,046.70            61,389.00       4.14            60.53
+ad_001_04_011  Static Image - Engagement #12               4         9,390,420.00      408,109.00   3,665,238.09            13,833.00       4.35           264.96
+ad_001_04_024  Video 30s - Brand Awareness #25             4         9,327,870.00      411,724.00   3,658,827.00            14,718.00       4.41           248.60
+ad_001_04_004  Story Ad - Prospecting #5                   4         9,672,925.00      414,654.00   3,655,183.31            13,833.00       4.29           264.24
+ad_001_04_008  Video 30s - Lead Gen #9                     4         9,714,579.00      411,123.00   3,607,043.97            14,177.00       4.23           254.43
+ad_001_01_000  Video 30s - Brand Awareness #1              1        56,781,286.00    2,518,059.00   3,589,167.00            63,694.00       4.43            56.35
+ad_001_04_025  Video 15s - Retargeting #26                 4         9,530,241.00      404,904.00   3,589,166.28            13,613.00       4.25           263.66
+ad_001_04_021  Collection - Conversion #22                 4         9,617,749.00      402,152.00   3,585,398.26            14,263.00       4.18           251.38
+ad_001_01_020  Story Ad - Lead Gen #21                     1        57,486,077.00    2,473,731.00   3,567,900.09            62,433.00       4.30            57.15
+ad_001_04_009  Video 15s - Conversion #10                  4         9,109,588.00      396,623.00   3,560,148.65            13,198.00       4.35           269.75
+ad_001_04_001  Video 15s - Retargeting #2                  4         9,595,006.00      393,311.00   3,551,000.98            13,513.00       4.10           262.78
+ad_001_04_003  Static Image - Conversion #4                4         9,273,916.00      388,946.00   3,542,279.58            13,670.00       4.19           259.13
+ad_001_04_014  Dynamic - Lead Gen #15                      4         9,462,738.00      423,534.00   3,541,584.96            14,383.00       4.48           246.23
+ad_001_01_003  Static Image - Conversion #4                1        57,660,164.00    2,557,591.00   3,536,172.67            63,611.00       4.44            55.59
+ad_001_04_013  Collection - Retargeting #14                4         9,256,361.00      405,129.00   3,529,692.48            13,747.00       4.38           256.76
+ad_001_01_018  Carousel - Brand Awareness #19              1        56,014,072.00    2,510,892.00   3,524,591.25            62,813.00       4.48            56.11
+ad_001_01_024  Video 30s - Brand Awareness #25             1        60,046,539.00    2,559,898.00   3,520,043.32            65,061.00       4.26            54.10
 
 ────────────────────────────────────────────────────────────────────────
 [F1] SELECT * for specific client/date (Row fetch)
 Category: Row-Based Fetching
-Time: 199.3 ms | Rows: 8,680
+Time: 16.9 ms | Rows: 8,680
 ────────────────────────────────────────────────────────────────────────
      id    client_id    channel_id  ad_account_id    campaign_id      campaign_name                               ad_id          ad_name                            impressions    clicks      spend    conversions  date
 -------  -----------  ------------  ---------------  ---------------  ------------------------------------------  -------------  -------------------------------  -------------  --------  ---------  -------------  ----------
