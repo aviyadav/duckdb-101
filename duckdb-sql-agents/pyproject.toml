@@ -1,0 +1,15 @@
+[project]
+name = "duckdb-sql-agents-eg"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "duckdb>=1.5.0",
+    "faker>=40.11.0",
+    "google-genai>=1.67.0",
+    "numpy>=2.4.3",
+    "pandas>=3.0.1",
+    "polars>=1.39.0",
+    "pyarrow>=23.0.1",
+    "python-dotenv>=1.2.2",
+    "tabulate>=0.10.0",
+]
