@@ -90,72 +90,19 @@ Runs `EXPLAIN ANALYZE` on a filtered aggregation and prints the physical plan. U
 
 ## Setup B — Iceberg lakehouse pipeline
 
-Demonstrates writing to and reading from a production-style Iceberg table: initial load, incremental upsert with `MERGE INTO`, and time-travel queries.
+This is the argument that changes the scope of what DuckDB is. Since v1.4.0 LTS in September 2025, DuckDB writes to Apache Iceberg tables with full ACID semantics. Since v1.5.3 in May 2026, it supports MERGE INTO upserts against Iceberg tables connected to REST catalogs. The table you write is immediately readable by Spark, Trino, or Flink. The format is the contract, not the engine.
 
-### Infrastructure — Iceberg on Docker
+Start The Local Catalog (Lab Setup)
 
-Setup B requires two services running locally:
-
-| Service | Role | Default address |
-|---|---|---|
-| **MinIO** | S3-compatible object storage (stores Iceberg data files) | `http://127.0.0.1:9000` |
-| **Iceberg REST catalog** | Tracks table metadata and snapshots | `http://127.0.0.1:8181` |
-
-#### `docker-compose.yml`
-
-Create this file in the project root (or anywhere convenient) and run it before the setup_b scripts:
-
-```yaml
-services:
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # MinIO web console
-    environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-        mc alias set local http://minio:9000 admin password &&
-        mc mb local/warehouse --ignore-existing &&
-        echo 'Bucket ready'
-      "
-
-  iceberg-rest:
-    image: tabulario/iceberg-rest:latest
-    container_name: iceberg-rest
-    depends_on:
-      - minio-init
-    ports:
-      - "8181:8181"
-    environment:
-      CATALOG_WAREHOUSE: s3://warehouse/
-      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
-      CATALOG_S3_ENDPOINT: http://minio:9000
-      CATALOG_S3_ACCESS__KEY__ID: admin
-      CATALOG_S3_SECRET__ACCESS__KEY: password
-      CATALOG_S3_PATH__STYLE__ACCESS: "true"
-
-volumes:
-  minio-data:
 ```
+# Clone the DuckDB Iceberg test scripts
+git clone https://github.com/duckdb/duckdb-iceberg.git
+cd duckdb-iceberg
+
+# Start a local REST catalog on port 8181 and MinIO on port 9000
+docker compose -f scripts/docker-compose.yml up -d
+```
+
 
 #### Start the stack
 
