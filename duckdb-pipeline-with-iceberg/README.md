@@ -1,6 +1,6 @@
 # DuckDB Pipeline
 
-A two-part data engineering lab that demonstrates DuckDB as an analytics engine — first against local Parquet files, then against a full Iceberg lakehouse backed by MinIO and an Iceberg REST catalog.
+A data engineering lab that demonstrates DuckDB as an analytics engine — first against local Parquet files, then against a full Iceberg lakehouse backed by either MinIO or RustFS via an Iceberg REST catalog.
 
 ---
 
@@ -20,9 +20,13 @@ duckdb-pipeline/
 │   └── inspect_plan.py                 # EXPLAIN ANALYZE a query
 ├── setup_b/
 │   ├── generate_incremental.py         # generate a 100 K-row incremental batch
-│   ├── pipeline_iceberg.py             # initial load into the Iceberg table
-│   ├── merge_iceberg.py                # incremental upsert via MERGE INTO
-│   └── timetravel_iceberg.py           # query historical Iceberg snapshots
+│   ├── pipeline_iceberg.py             # initial load into the Iceberg table (MinIO)
+│   ├── merge_iceberg.py                # incremental upsert via MERGE INTO (MinIO)
+│   └── timetravel_iceberg.py           # query historical Iceberg snapshots (MinIO)
+├── setup_c/
+│   ├── docker-compose.yml              # RustFS + Iceberg REST catalog
+│   ├── pipeline_iceberg.py             # initial load into RustFS
+│   └── merge_iceberg.py                # incremental upsert on RustFS
 ├── pyproject.toml
 └── README.md
 ```
@@ -35,7 +39,7 @@ duckdb-pipeline/
 |---|---|
 | Python | ≥ 3.14 |
 | uv | any recent |
-| Docker + Docker Compose | for setup_b |
+| Docker + Docker Compose | for setup_b and setup_c |
 
 Install Python dependencies:
 
@@ -90,19 +94,72 @@ Runs `EXPLAIN ANALYZE` on a filtered aggregation and prints the physical plan. U
 
 ## Setup B — Iceberg lakehouse pipeline
 
-This is the argument that changes the scope of what DuckDB is. Since v1.4.0 LTS in September 2025, DuckDB writes to Apache Iceberg tables with full ACID semantics. Since v1.5.3 in May 2026, it supports MERGE INTO upserts against Iceberg tables connected to REST catalogs. The table you write is immediately readable by Spark, Trino, or Flink. The format is the contract, not the engine.
+Demonstrates writing to and reading from a production-style Iceberg table: initial load, incremental upsert with `MERGE INTO`, and time-travel queries.
 
-Start The Local Catalog (Lab Setup)
+### Infrastructure — Iceberg on Docker
 
+Setup B requires two services running locally:
+
+| Service | Role | Default address |
+|---|---|---|
+| **MinIO** | S3-compatible object storage (stores Iceberg data files) | `http://127.0.0.1:9000` |
+| **Iceberg REST catalog** | Tracks table metadata and snapshots | `http://127.0.0.1:8181` |
+
+#### `docker-compose.yml`
+
+Create this file in the project root (or anywhere convenient) and run it before the setup_b scripts:
+
+```yaml
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO web console
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 admin password &&
+        mc mb local/warehouse --ignore-existing &&
+        echo 'Bucket ready'
+      "
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:latest
+    container_name: iceberg-rest
+    depends_on:
+      - minio-init
+    ports:
+      - "8181:8181"
+    environment:
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_ACCESS__KEY__ID: admin
+      CATALOG_S3_SECRET__ACCESS__KEY: password
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+
+volumes:
+  minio-data:
 ```
-# Clone the DuckDB Iceberg test scripts
-git clone https://github.com/duckdb/duckdb-iceberg.git
-cd duckdb-iceberg
-
-# Start a local REST catalog on port 8181 and MinIO on port 9000
-docker compose -f scripts/docker-compose.yml up -d
-```
-
 
 #### Start the stack
 
@@ -180,6 +237,175 @@ uv run setup_b/timetravel_iceberg.py
 ```
 
 Lists all snapshots of `sales_summary`, then queries the table **as it existed before the upsert** (snapshot 1) using the Iceberg `AT (VERSION => <snapshot_id>)` syntax.
+
+---
+
+## Setup C — Iceberg on RustFS
+
+A variant of Setup B that replaces MinIO with **RustFS**, a high-performance S3-compatible object store written in Rust. This setup demonstrates how DuckDB and the Iceberg REST catalog can seamlessly switch storage backends.
+
+### Infrastructure — RustFS on Docker
+
+Setup C requires two services running locally:
+
+| Service | Role | Default address |
+|---|---|---|
+| **RustFS** | S3-compatible object storage (stores Iceberg data files) | `http://127.0.0.1:9000` |
+| **Iceberg REST catalog** | Tracks table metadata and snapshots | `http://127.0.0.1:8181` |
+
+#### `setup_c/docker-compose.yml`
+
+This is the recommended way to run the full stack. It brings up RustFS with its web console enabled, creates the `warehouse` bucket, and starts the Iceberg REST catalog.
+
+```yaml
+services:
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console (must be enabled, see environment below)
+    environment:
+      - RUSTFS_ACCESS_KEY=admin
+      - RUSTFS_SECRET_KEY=password
+      # The web console is disabled by default in RustFS.
+      # RUSTFS_CONSOLE_ENABLE turns it on; it listens on :9001.
+      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_CONSOLE_ADDRESS=:9001
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rustfs-init:
+    image: minio/mc:latest
+    container_name: rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://rustfs:9000 admin password &&
+        mc mb local/warehouse --ignore-existing &&
+        echo 'Bucket ready'
+      "
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:latest
+    container_name: iceberg-rest-rustfs
+    depends_on:
+      rustfs-init:
+        condition: service_completed_successfully
+    ports:
+      - "8181:8181"
+    environment:
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://rustfs:9000
+      CATALOG_S3_ACCESS__KEY__ID: admin
+      CATALOG_S3_SECRET__ACCESS__KEY: password
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+      # AWS SDK v2 requires a region even when using a custom S3 endpoint.
+      # Without this, S3FileIO fails with "Unable to load region" (HTTP 500).
+      AWS_REGION: us-east-1
+      CATALOG_S3_REGION: us-east-1
+
+volumes:
+  rustfs-data:
+```
+
+#### Start the stack
+
+```bash
+docker compose -f setup_c/docker-compose.yml up -d
+```
+
+Wait for the `iceberg-rest-rustfs` container to be healthy (a few seconds), then verify:
+
+```bash
+# RustFS console
+open http://localhost:9001          # login: admin / password
+
+# Iceberg catalog health
+curl http://localhost:8181/v1/config
+```
+
+#### Stop and clean up
+
+```bash
+docker compose -f setup_c/docker-compose.yml down          # stop containers, keep volume
+docker compose -f setup_c/docker-compose.yml down -v       # stop containers and delete stored data
+```
+
+#### Running RustFS standalone with `docker run`
+
+If you only want RustFS (for example, to inspect buckets manually without the Iceberg catalog), you can start it directly with `docker run`. The key thing to remember is that **the web console is disabled by default** — you must enable it explicitly via `RUSTFS_CONSOLE_ENABLE=true`.
+
+```bash
+docker run -d \
+  --name rustfs \
+  -p 9000:9000 \
+  -p 9001:9001 \
+  -e RUSTFS_ACCESS_KEY=admin \
+  -e RUSTFS_SECRET_KEY=password \
+  -e RUSTFS_CONSOLE_ENABLE=true \
+  -e RUSTFS_CONSOLE_ADDRESS=:9001 \
+  -v rustfs-data:/data \
+  --health-cmd "curl -f http://localhost:9000/health" \
+  --health-interval 5s \
+  --health-timeout 5s \
+  --health-retries 5 \
+  rustfs/rustfs:latest
+```
+
+Then create the `warehouse` bucket using the MinIO client (`mc`), which is fully compatible with RustFS:
+
+```bash
+docker run --rm --network host minio/mc:latest \
+  sh -c "mc alias set local http://127.0.0.1:9000 admin password && mc mb local/warehouse --ignore-existing"
+```
+
+Stop and remove the standalone container:
+
+```bash
+docker stop rustfs && docker rm rustfs
+docker volume rm rustfs-data    # optional: delete stored data
+```
+
+### Accessing the RustFS web console
+
+Unlike MinIO, RustFS ships with its web console **disabled by default**. Once `RUSTFS_CONSOLE_ENABLE=true` is set (as in the compose file and the `docker run` command above), the console is available at:
+
+```
+http://localhost:9001
+```
+
+**Login credentials:**
+
+| Field | Value |
+|---|---|
+| Access Key | `admin` |
+| Secret Key | `password` |
+
+From the console you can browse the `warehouse` bucket and inspect the Iceberg data files (`metadata/*.json`, `data/*.parquet`) written by `pipeline_iceberg.py` and `merge_iceberg.py`.
+
+### Execution
+
+The pipeline steps mirror Setup B, but use the RustFS-backed scripts. The incremental data file (`data/raw/sales_incremental.parquet`) is shared with Setup B — generate it once with `setup_b/generate_incremental.py` if you haven't already.
+
+```bash
+# Generate incremental data (only needed once)
+uv run setup_b/generate_incremental.py
+
+# Initial load into RustFS-backed Iceberg
+uv run setup_c/pipeline_iceberg.py
+
+# Incremental upsert on RustFS-backed Iceberg
+uv run setup_c/merge_iceberg.py
+```
 
 ---
 
