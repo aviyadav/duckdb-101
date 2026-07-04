@@ -3,3 +3,6 @@ boring-semantic-layer
 boring-semantic-layer[visualization]
 altair[all]
 ibis-framework[duckdb]
+pandas
+xorq
+polars
