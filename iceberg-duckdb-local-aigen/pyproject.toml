@@ -1,0 +1,28 @@
+[project]
+name = "iceberg-duckdb-polars"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "duckdb>=1.4.1",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "polars>=1.35.1",
+    "pyarrow>=22.0.0",
+    "pyiceberg>=0.10.0",
+    "pytest>=8.4.2",
+    "sqlalchemy>=2.0.44",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore:Using `@model_validator` with mode='after' on a classmethod is deprecated:DeprecationWarning",
+]
