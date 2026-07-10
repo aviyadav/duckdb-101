@@ -1,0 +1,5 @@
+[console_scripts]
+analytics-report = app.analytics:main
+generate-analytics-data = app.data_generator:main
+ingest-analytics-data = app.process_incremental_data:main
+run-analytics-pipeline = app.pipeline:main

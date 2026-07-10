@@ -1,0 +1,33 @@
+[project]
+name = "duckdb-iceberg-local-analytics-stack"
+version = "1.0.0"
+description = "A local-first DuckDB and Parquet analytics application"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "datafusion>=54.0.0",
+    "duckdb>=1.5.4",
+    "fastapi>=0.139.0",
+    "httpx2>=2.5.0",
+    "pandas>=3.0.3",
+    "polars>=1.42.1",
+    "pyarrow>=25.0.0",
+    "uvicorn>=0.51.0",
+]
+
+[project.scripts]
+generate-analytics-data = "app.data_generator:main"
+run-analytics-pipeline = "app.pipeline:main"
+analytics-report = "app.analytics:main"
+ingest-analytics-data = "app.process_incremental_data:main"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+py-modules = ["main"]
+
+[tool.uv]
+package = true
