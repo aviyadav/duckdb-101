@@ -1,0 +1,10 @@
+[project]
+name = "duckdb-persistent-vs-parquet"
+version = "0.1.0"
+description = "Generate partitioned synthetic AWS VPC Flow Logs"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "duckdb>=1.5.5",
+    "pyarrow>=19.0.0",
+]
