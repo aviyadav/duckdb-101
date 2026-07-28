@@ -1,3 +1,5 @@
+-- duckdb vpc_analytics.duckdb
+
 DROP VIEW IF EXISTS flow_logs;
 CREATE OR REPLACE VIEW flow_logs AS
 SELECT
@@ -31,6 +33,8 @@ WHERE to_timestamp(start) >= CURRENT_DATE - INTERVAL 100 DAY
 GROUP BY 1
 ORDER BY 1 DESC;
 
+
+-- duckdb analytics.duckdb
 
 CREATE TABLE flow_logs AS
     SELECT
