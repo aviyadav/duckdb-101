@@ -1,0 +1,64 @@
+services:
+  server1:
+    build: .
+    environment:
+      QUACK_ROLE: server1
+    ports:
+      - "9491:9494"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "duckdb",
+          "-c",
+          "FROM quack_query('quack://127.0.0.1:9494', 'SELECT 1', token='server1_secret', disable_ssl => true);",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  server2:
+    build: .
+    environment:
+      QUACK_ROLE: server2
+    ports:
+      - "9492:9494"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "duckdb",
+          "-c",
+          "FROM quack_query('quack://127.0.0.1:9494', 'SELECT 1', token='server2_secret', disable_ssl => true);",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  coordinator:
+    build: .
+    depends_on:
+      server1:
+        condition: service_healthy
+      server2:
+        condition: service_healthy
+    environment:
+      QUACK_ROLE: coordinator
+      SERVER1_TOKEN: server1_secret
+      SERVER2_TOKEN: server2_secret
+    ports:
+      - "9493:9494"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "duckdb",
+          "-c",
+          "FROM quack_query('quack://127.0.0.1:9494', 'SELECT 1', token='coord_secret', disable_ssl => true);",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
