@@ -1,0 +1,195 @@
+# =============================================================================
+#  Local "lakehouse in a box" used by the DuckDB MERGE-on-Iceberg exercise.
+#
+#    RustFS      -> local S3-compatible object storage   (replaces AWS S3)
+#    PostgreSQL  -> Iceberg catalog metadata database     (replaces AWS Glue)
+#    Lakekeeper  -> Iceberg REST catalog server           (replaces the Glue /
+#                                                          S3 Tables REST endpoints)
+#
+#  Usage:
+#    docker compose up -d            # start everything (first run pulls images)
+#    docker compose ps               # postgres/rustfs/lakekeeper = healthy,
+#                                    # the *-init services = exited (0)
+#    docker compose down             # stop, keep data
+#    docker compose down -v          # stop, delete RustFS objects + Postgres data
+# =============================================================================
+name: duckdb-iceberg-local
+
+# Shared Lakekeeper configuration (used by both "migrate" and "serve").
+x-lakekeeper-env: &lakekeeper-env
+  # Postgres connection for catalog metadata: read and write can point at the
+  # same local database.
+  LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://postgres:postgres@postgres:5432/iceberg
+  LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://postgres:postgres@postgres:5432/iceberg
+  # Used to encrypt warehouse storage credentials at rest; keep it stable.
+  LAKEKEEPER__PG_ENCRYPTION_KEY: this-is-not-a-secure-encryption-key-change-me
+  RUST_LOG: info
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Metadata store: namespaces, tables, snapshots, metadata.json pointers
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17
+    container_name: iceberg-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: iceberg
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d iceberg"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 2. Data store: S3-compatible object storage (Parquet + Avro + metadata.json)
+  # ---------------------------------------------------------------------------
+  rustfs:
+    image: rustfs/rustfs:1.0.0
+    container_name: rustfs
+    command: ["/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: lakehouse-admin
+      RUSTFS_SECRET_KEY: lakehouse-admin-secret
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_OBS_LOGGER_LEVEL: "error"
+      RUSTFS_OBS_LOG_DIRECTORY: "/var/log/rustfs/"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # RustFS web console
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/var/log/rustfs
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 3. One-shot: create the bucket that backs the Iceberg warehouse
+  # ---------------------------------------------------------------------------
+  rustfs-init:
+    image: quay.io/minio/mc:latest
+    container_name: rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_started
+    environment:
+      RUSTFS_ACCESS_KEY: lakehouse-admin
+      RUSTFS_SECRET_KEY: lakehouse-admin-secret
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        until mc alias set rustfs http://rustfs:9000 "$$RUSTFS_ACCESS_KEY" "$$RUSTFS_SECRET_KEY" >/dev/null 2>&1; do
+          echo "waiting for RustFS S3 API on http://rustfs:9000 ..."
+          sleep 2
+        done
+        mc mb --ignore-existing rustfs/warehouse
+        echo "buckets:"; mc ls rustfs
+    restart: "no"
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 4. One-shot: create/migrate the catalog tables inside Postgres
+  # ---------------------------------------------------------------------------
+  lakekeeper-migrate:
+    image: quay.io/lakekeeper/catalog:v0.13.5
+    container_name: lakekeeper-migrate
+    command: ["migrate"]
+    environment: *lakekeeper-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 5. Iceberg REST catalog server: http://localhost:8181/catalog
+  # ---------------------------------------------------------------------------
+  lakekeeper:
+    image: quay.io/lakekeeper/catalog:v0.13.5
+    container_name: lakekeeper
+    command: ["serve"]
+    environment: *lakekeeper-env
+    # The warehouse storage endpoint is "host.docker.internal:9000" so that the
+    # SAME endpoint URL works from inside this container and from your host
+    # (DuckDB). On Docker Desktop for Windows/macOS that name already resolves;
+    # this line makes it work on Linux hosts too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8181:8181"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lakekeeper-migrate:
+        condition: service_completed_successfully
+      rustfs-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/home/nonroot/lakekeeper", "healthcheck"]
+      interval: 2s
+      timeout: 10s
+      retries: 30
+      start_period: 5s
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 6. One-shot: accept terms of use (required exactly once per catalog)
+  # ---------------------------------------------------------------------------
+  lakekeeper-bootstrap:
+    image: curlimages/curl:latest
+    container_name: lakekeeper-bootstrap
+    depends_on:
+      lakekeeper:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        code=$$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+          http://lakekeeper:8181/management/v1/bootstrap \
+          -H 'Content-Type: application/json' \
+          --data '{"accept-terms-of-use": true}')
+        echo "bootstrap -> HTTP $$code"
+        # 2xx = bootstrapped now, 400/409 = already bootstrapped (idempotent re-run)
+        case "$$code" in 2*) exit 0 ;; 400) echo "catalog already bootstrapped"; exit 0 ;; 409) echo "catalog already bootstrapped"; exit 0 ;; *) exit 1 ;; esac
+    restart: "no"
+    networks: [iceberg]
+
+  # ---------------------------------------------------------------------------
+  # 7. One-shot: register the RustFS-backed warehouse named "demo"
+  # ---------------------------------------------------------------------------
+  lakekeeper-warehouse-init:
+    image: curlimages/curl:latest
+    container_name: lakekeeper-warehouse-init
+    volumes:
+      - ./config/create-warehouse.json:/tmp/create-warehouse.json:ro
+    depends_on:
+      lakekeeper-bootstrap:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        code=$$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+          http://lakekeeper:8181/management/v1/warehouse \
+          -H 'Content-Type: application/json' \
+          --data @/tmp/create-warehouse.json)
+        echo "warehouse create -> HTTP $$code"
+        # 201/200 = created, 400/409 = already exists (idempotent re-run)
+        case "$$code" in 2*) exit 0 ;; 400) echo "warehouse 'demo' already exists"; exit 0 ;; 409) echo "warehouse 'demo' already exists"; exit 0 ;; *) exit 1 ;; esac
+    restart: "no"
+    networks: [iceberg]
+
+networks:
+  iceberg:
+
+volumes:
+  postgres-data:
+  rustfs-data:
+  rustfs-logs:
