@@ -22,6 +22,13 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 uv sync
 ```
 
+### Model download
+
+```
+uv run litert-lm import --from-huggingface-repo=litert-community/gemma-4-26B-A4B-it-litert-lm gemma-4-26B-A4B-it-gpu.litertlm gemma4-26b
+```
+
+
 ## Usage
 
 ### Running the Local AI Agent
