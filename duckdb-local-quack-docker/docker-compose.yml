@@ -1,0 +1,76 @@
+services:
+  worker-1:
+    build: .
+    container_name: worker-1
+    environment:
+      WORKER_INDEX: "1"
+      ROW_COUNT: "${ROW_COUNT:-100000}"
+      QUACK_PORT: "${QUACK_PORT:-9494}"
+      QUACK_HOST: "${QUACK_HOST:-0.0.0.0}"
+      QUACK_TOKEN: "${QUACK_TOKEN:-local-dev-token}"
+      SERVER_MODE: "${SERVER_MODE:-http}"
+      FORCE_SEED: "${FORCE_SEED:-0}"
+      DUCKDB_FILE: /data/worker.duckdb
+    volumes:
+      - worker1-data:/data
+    ports:
+      - "9491:9494"
+    restart: unless-stopped
+
+  worker-2:
+    build: .
+    container_name: worker-2
+    environment:
+      WORKER_INDEX: "2"
+      ROW_COUNT: "${ROW_COUNT:-100000}"
+      QUACK_PORT: "${QUACK_PORT:-9494}"
+      QUACK_HOST: "${QUACK_HOST:-0.0.0.0}"
+      QUACK_TOKEN: "${QUACK_TOKEN:-local-dev-token}"
+      SERVER_MODE: "${SERVER_MODE:-http}"
+      FORCE_SEED: "${FORCE_SEED:-0}"
+      DUCKDB_FILE: /data/worker.duckdb
+    volumes:
+      - worker2-data:/data
+    ports:
+      - "9492:9494"
+    restart: unless-stopped
+
+  worker-3:
+    build: .
+    container_name: worker-3
+    environment:
+      WORKER_INDEX: "3"
+      ROW_COUNT: "${ROW_COUNT:-100000}"
+      QUACK_PORT: "${QUACK_PORT:-9494}"
+      QUACK_HOST: "${QUACK_HOST:-0.0.0.0}"
+      QUACK_TOKEN: "${QUACK_TOKEN:-local-dev-token}"
+      SERVER_MODE: "${SERVER_MODE:-http}"
+      FORCE_SEED: "${FORCE_SEED:-0}"
+      DUCKDB_FILE: /data/worker.duckdb
+    volumes:
+      - worker3-data:/data
+    ports:
+      - "9493:9494"
+    restart: unless-stopped
+
+  coordinator:
+    build: .
+    container_name: coordinator
+    entrypoint: ["python", "/app/related_cluster_sql.py"]
+    environment:
+      SERVER_MODE: "${SERVER_MODE:-http}"
+      QUACK_TOKEN: "${QUACK_TOKEN:-local-dev-token}"
+      QUACK_PORT: "${QUACK_PORT:-9494}"
+      WORKER_1_ENDPOINT: "worker-1:${QUACK_PORT:-9494}"
+      WORKER_2_ENDPOINT: "worker-2:${QUACK_PORT:-9494}"
+      WORKER_3_ENDPOINT: "worker-3:${QUACK_PORT:-9494}"
+    depends_on:
+      - worker-1
+      - worker-2
+      - worker-3
+    restart: "no"
+
+volumes:
+  worker1-data:
+  worker2-data:
+  worker3-data:

@@ -1,0 +1,9 @@
+# Host-side dependencies for talking to the Dockerised workers.
+#
+# HTTP mode (local/http_client.py) needs NOTHING - it is standard library only.
+#
+# Quack mode (local/quack_client.py) needs duckdb, and the version must match
+# the one baked into the image (see ../requirements.txt). DuckDB extensions are
+# built per DuckDB version, so a mismatch means `INSTALL quack` / `LOAD quack`
+# will fail or the wire protocol will not line up.
+duckdb==1.5.5
