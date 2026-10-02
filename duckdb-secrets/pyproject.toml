@@ -1,0 +1,24 @@
+[project]
+name = "duckdb-secrets"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Avinash", email = "avinash.yadav@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "duckdb>=1.5.6",
+    "pandas>=3.0.6",
+    "ruff>=0.16.10",
+]
+
+[project.scripts]
+duckdb-secrets = "duckdb_secrets:main"
+query-bucket = "duckdb_secrets:query_my_bucket"
+setup-scoped = "duckdb_secrets:setup_scoped_secrets"
+query-scoped = "duckdb_secrets:query_scoped_secrets"
+
+[build-system]
+requires = ["uv_build>=0.12.18,<0.13.0"]
+build-backend = "uv_build"
