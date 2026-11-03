@@ -1,0 +1,23 @@
+Powershell
+
+$url = 'https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-09.parquet'
+
+Invoke-WebRequest -Uri $url -OutFile .\data\data.parquet
+
+Get-Item -Path .\data\data.parquet | Select-Object -Property Name, Length
+Get-Content -Path .\data\data.parquet -TotalCount 1
+
+
+
+Linux:
+
+wget
+
+$ wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-09.parquet -O /path/to/dir/yellow_tripdata_2026-09.parquet
+
+
+curl
+
+
+
+$ curl https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-09.parquet -o /path/to/dir/yellow_tripdata_2026-09.parquet
