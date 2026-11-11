@@ -1,0 +1,17 @@
+# secrets
+.env
+
+# virtual env
+.venv/
+
+# local dataset CSVs (keep the folder itself)
+data/*
+!data/.gitkeep
+
+# generated database
+olist.duckdb
+
+# caches and run logs
+__pycache__/
+*.archive
+logs/
