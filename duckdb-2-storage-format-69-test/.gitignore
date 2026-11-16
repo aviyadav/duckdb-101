@@ -1,0 +1,12 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Generated DuckDB databases and write-ahead logs
+*.db
+*.db.wal
+
+# Conversion temporary files
+/data/
+/my_benchmark_v2/

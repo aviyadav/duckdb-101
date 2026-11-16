@@ -1,0 +1,39 @@
+================ [DuckDB 2.x on Native v69 Format] ================
+Target file: analytics_v69.db
+DuckDB Version: 2.0.0
+-> Initializing connection and loading metadata...
+   Cold Connection / Metadata Load: 0.0182 seconds
+   Connected Database Catalog: [(20745, 'analytics_v69', '/home/avinash/codebase/python-base/duckdb-2-storage-format-69-test/analytics_v69.db')]
+-> Inspecting database schema (SHOW TABLES)...
+   SHOW TABLES (1 tables found): 0.0063 seconds
+-> Executing full table scan / row count on 'flow_logs'...
+   Full Table Scan (50,000,000 rows): 0.0009 seconds
+-> Executing monthly GB aggregation query on 'flow_logs'...
+   Monthly Aggregation Query: 0.2442 seconds (36 rows returned)
+
+--- Query Results Preview ---
+shape: (36, 3)
+┌──────┬───────┬──────────┐
+│ year ┆ month ┆ total_gb │
+│ ---  ┆ ---   ┆ ---      │
+│ i16  ┆ u8    ┆ f64      │
+╞══════╪═══════╪══════════╡
+│ 2026 ┆ 10    ┆ 15894.16 │
+│ 2026 ┆ 9     ┆ 15750.38 │
+│ 2026 ┆ 8     ┆ 15443.5  │
+│ 2026 ┆ 7     ┆ 15057.44 │
+│ 2026 ┆ 6     ┆ 14394.99 │
+│ …    ┆ …     ┆ …        │
+│ 2024 ┆ 3     ┆ 3923.27  │
+│ 2024 ┆ 2     ┆ 3564.95  │
+│ 2024 ┆ 1     ┆ 3006.05  │
+│ 2023 ┆ 12    ┆ 2390.4   │
+│ 2023 ┆ 11    ┆ 1514.29  │
+└──────┴───────┴──────────┘
+-----------------------------
+
+[+] DuckDB 2.x format 69 benchmark complete.
+
+real	0m0.367s
+user	0m0.357s
+sys	0m0.462s
